@@ -35,23 +35,28 @@
 
 ## 🦀 He reacts to Claude's work
 
-Thinking, writing files, running commands, reading, permission questions and more: 51 reactions in all. A few favourites:
+51 reactions in all. These are the ones you'll see every day:
 
 <table>
   <tr>
-    <td align="center"><img src="docs/react-cheer.svg" width="240" alt="Cheering with confetti"><br><b>Tests pass</b></td>
-    <td align="center"><img src="docs/react-facepalm.svg" width="240" alt="A facepalm"><br><b>Tests fail</b></td>
-    <td align="center"><img src="docs/react-ship.svg" width="240" alt="Sealing a box"><br><b>A git commit</b></td>
+    <td align="center"><img src="docs/react-think.svg" width="240" alt="Thinking"><br><b>Thinking</b><br><sub>dots while Claude works</sub></td>
+    <td align="center"><img src="docs/react-edit.svg" width="240" alt="Writing a file"><br><b>Writing a file</b><br><sub>scribbling on a notepad</sub></td>
+    <td align="center"><img src="docs/react-shell.svg" width="240" alt="Running a command"><br><b>Running a command</b><br><sub>typing at the terminal</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/react-rocket.svg" width="240" alt="A rocket launch"><br><b>A git push</b></td>
-    <td align="center"><img src="docs/react-permission.svg" width="240" alt="Holding up a question mark sign"><br><b>Waiting for permission</b></td>
-    <td align="center"><img src="docs/react-oops.svg" width="240" alt="A puff of smoke"><br><b>A command failed</b></td>
+    <td align="center"><img src="docs/react-look.svg" width="240" alt="Reading"><br><b>Reading</b><br><sub>nose in a book</sub></td>
+    <td align="center"><img src="docs/react-done.svg" width="240" alt="Reply ready"><br><b>Reply ready</b><br><sub>a wave when Claude finishes</sub></td>
+    <td align="center"><img src="docs/react-permission.svg" width="240" alt="Waiting for permission"><br><b>Waiting for permission</b><br><sub>holds up a "?" until you answer</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/react-trophy.svg" width="240" alt="Lifting a trophy"><br><b>Your 100th message</b></td>
-    <td align="center"><img src="docs/react-juggle.svg" width="240" alt="Juggling"><br><b>Idle moments</b></td>
-    <td align="center"><img src="docs/react-asleep.svg" width="240" alt="Asleep in bed"><br><b>Asleep when it's quiet</b></td>
+    <td align="center"><img src="docs/react-asking.svg" width="240" alt="Claude asks you questions"><br><b>Claude asks you questions</b><br><sub>a bubble with how many</sub></td>
+    <td align="center"><img src="docs/react-oops.svg" width="240" alt="A command failed"><br><b>A command failed</b><br><sub>a puff of smoke</sub></td>
+    <td align="center"><img src="docs/react-tired.svg" width="240" alt="Context filling up"><br><b>Context filling up</b><br><sub>he gets tired and sweaty</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/react-cheer.svg" width="240" alt="Tests pass"><br><b>Tests pass</b><br><sub>fists up, confetti down</sub></td>
+    <td align="center"><img src="docs/react-facepalm.svg" width="240" alt="Tests fail"><br><b>Tests fail</b><br><sub>a facepalm</sub></td>
+    <td align="center"><img src="docs/react-asleep.svg" width="240" alt="Quiet for a minute"><br><b>Quiet for a minute</b><br><sub>tucked into bed</sub></td>
   </tr>
 </table>
 
@@ -96,18 +101,18 @@ Around 80 outfits for holidays around the world, plus your birthday, a partner's
 <table>
   <tr>
     <td align="center"><img src="docs/outfit-christmas.svg" width="240" alt="Handing over a present at Christmas"><br><b>Christmas</b><br><sub>handing you a present</sub></td>
-    <td align="center"><img src="docs/outfit-witch.svg" width="240" alt="A witch writing"><br><b>Halloween week</b><br><sub>a new costume every day</sub></td>
-    <td align="center"><img src="docs/outfit-chinese.svg" width="240" alt="Waving at Lunar New Year"><br><b>Lunar New Year</b><br><sub>lanterns and fireworks</sub></td>
+    <td align="center"><img src="docs/outfit-witch.svg" width="240" alt="A witch juggling"><br><b>Halloween week</b><br><sub>a new costume every day</sub></td>
+    <td align="center"><img src="docs/outfit-chinese.svg" width="240" alt="A rocket launch at Lunar New Year"><br><b>Lunar New Year</b><br><sub>lanterns and fireworks</sub></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/outfit-diwali.svg" width="240" alt="Ticking off a task at Diwali"><br><b>Diwali</b><br><sub>diyas and fireworks</sub></td>
     <td align="center"><img src="docs/outfit-holi.svg" width="240" alt="Waving goodbye at Holi"><br><b>Holi</b><br><sub>clouds of colour</sub></td>
-    <td align="center"><img src="docs/outfit-oktoberfest.svg" width="240" alt="Reading at Oktoberfest"><br><b>Oktoberfest</b><br><sub>bunting and a pretzel</sub></td>
+    <td align="center"><img src="docs/outfit-oktoberfest.svg" width="240" alt="Lifting a trophy at Oktoberfest"><br><b>Oktoberfest</b><br><sub>bunting and a pretzel</sub></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/outfit-canada.svg" width="240" alt="Lifting weights on Canada Day"><br><b>Canada Day</b><br><sub>pumping iron for the country</sub></td>
-    <td align="center"><img src="docs/outfit-summer.svg" width="240" alt="Tired in the summer heat"><br><b>Summer</b><br><sub>a straw hat and shades</sub></td>
-    <td align="center"><img src="docs/outfit-pirate.svg" width="240" alt="A pirate at the terminal"><br><b>Pirate Day</b><br><sub>Sep 19, arr</sub></td>
+    <td align="center"><img src="docs/outfit-summer.svg" width="240" alt="Summer"><br><b>Summer</b><br><sub>a straw hat and shades</sub></td>
+    <td align="center"><img src="docs/outfit-pirate.svg" width="240" alt="A pirate packing his loot"><br><b>Pirate Day</b><br><sub>Sep 19, arr</sub></td>
   </tr>
 </table>
 
