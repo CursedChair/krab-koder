@@ -106,13 +106,35 @@ Around 80 outfits for holidays around the world, plus your birthday, a partner's
   </tr>
   <tr>
     <td align="center"><img src="docs/outfit-diwali.svg" width="240" alt="Ticking off a task at Diwali"><br><b>Diwali</b><br><sub>diyas and fireworks</sub></td>
-    <td align="center"><img src="docs/outfit-holi.svg" width="240" alt="Thumbs up at Holi"><br><b>Holi</b><br><sub>clouds of colour</sub></td>
+    <td align="center"><img src="docs/outfit-holi.svg" width="240" alt="Waving goodbye at Holi"><br><b>Holi</b><br><sub>clouds of colour</sub></td>
     <td align="center"><img src="docs/outfit-oktoberfest.svg" width="240" alt="Reading at Oktoberfest"><br><b>Oktoberfest</b><br><sub>bunting and a pretzel</sub></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/outfit-canada.svg" width="240" alt="Lifting weights on Canada Day"><br><b>Canada Day</b><br><sub>pumping iron for the country</sub></td>
     <td align="center"><img src="docs/outfit-summer.svg" width="240" alt="Tired in the summer heat"><br><b>Summer</b><br><sub>a straw hat and shades</sub></td>
     <td align="center"><img src="docs/outfit-pirate.svg" width="240" alt="A pirate at the terminal"><br><b>Pirate Day</b><br><sub>Sep 19, arr</sub></td>
+  </tr>
+</table>
+
+## 🌟 Rare and unusual outfits
+
+Some only come around once a year, some once every four years, and one only for a single hour.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/rare-dayofdead.svg" width="240" alt="Day of the Dead face paint, waving hello"><br><b>Day of the Dead</b><br><sub>papel picado and marigolds</sub></td>
+    <td align="center"><img src="docs/rare-hanukkah.svg" width="240" alt="Hanukkah with a menorah"><br><b>Hanukkah</b><br><sub>one more candle lit each night</sub></td>
+    <td align="center"><img src="docs/rare-gta6.svg" width="240" alt="A neon city sunset"><br><b>Neon City Launch Day</b><br><sub>a retro neon sunset and palms</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/rare-cybermonday.svg" width="240" alt="Cyber Monday with falling binary"><br><b>Cyber Monday</b><br><sub>raining ones and zeros</sub></td>
+    <td align="center"><img src="docs/rare-friday13.svg" width="240" alt="Friday the 13th, checking the calendar"><br><b>Friday the 13th</b><br><sub>beats every other outfit</sub></td>
+    <td align="center"><img src="docs/rare-groundhog.svg" width="240" alt="Groundhog Day, watching the clock"><br><b>Groundhog Day</b><br><sub>stuck on the clock again</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/rare-earthhour.svg" width="240" alt="Earth Hour by candlelight"><br><b>Earth Hour</b><br><sub>only from 8:30 to 9:30 pm</sub></td>
+    <td align="center"><img src="docs/rare-leapday.svg" width="240" alt="Leap Day as a frog"><br><b>Leap Day</b><br><sub>once every four years</sub></td>
+    <td align="center"><img src="docs/rare-mexico.svg" width="240" alt="Mexican Independence Day"><br><b>Mexican Independence Day</b><br><sub>a charro hat and El Grito</sub></td>
   </tr>
 </table>
 
