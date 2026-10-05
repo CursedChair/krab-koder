@@ -25,7 +25,7 @@ export const COLUMN_PX = 8
 // pole is taller, so the flag gets a taller picture while it plays.
 export const TOP = -46
 export const TOP_TALL = -74
-const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy', 'startled', 'unbox', 'mail', 'music', 'blush'])
+const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy', 'startled', 'unbox', 'mail', 'music', 'blush', 'listen'])
 export const topFor = (state) => (TALL_LOOKS.has(state) ? TOP_TALL : TOP)
 export const SPRITE_UNITS = 107
 
@@ -1598,13 +1598,15 @@ function listen() {
     anim('translate', 0.8, [[0, '192 0'], [0.8, '164 4']], { begin }), anim('opacity', 0.8, [[0, '0'], [0.2, '1', 'lin'], [0.8, '0', 'lin']], { begin }))).join('')
   // The look from the photos, without a mouth: one brow raised, the other lowered
   const face = rect(19, 4, 15, 3, INK) + rect(31, 2, 4, 3, INK) + rect(73, 7, 15, 3, INK)
-  return figure({
+  // He leans in toward you, getting bigger as if pressing up against the screen, then settles back
+  const leanIn = anim('scale', D, [[0, '1 1'], [0.3, '1 1'], [0.8, '1.22 1.22', 'p2out'], [2.6, '1.22 1.22'], [3.0, '1 1', 'p2io'], [D, '1 1']], ONCE)
+  return wrap(wrap(figure({
     ownProps: true,
     heldRaw: sprout + between(waves, D, 0.6, 2.6) + between(face, D, 0.45, 2.75),
     right: { shape: flatHand, carry: '', anims: [raise] },
     upper: [anim('translate', D, [[0, '0 0'], [0.5, '-3 1', 'p2io'], [2.6, '-3 1'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)],
     eyes: { gaze: [anim('translate', D, [[0, '0 0'], [0.5, '-2 1', 'p2io'], [2.6, '-2 1'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)] },
-  })
+  }), `translate(-53.5 -${FLOOR})`), `translate(53.5 ${FLOOR})`, leanIn)
 }
 
 // Reading glasses that sit over his eyes (frames wide enough for his eyes to look around inside them)
