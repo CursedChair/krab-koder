@@ -1508,12 +1508,14 @@ function unbox() {
 // Searching the code: he peers through a big magnifying glass, his eye huge behind the lens, sweeping side to side
 function magnify() {
   const D = EVENT_SECONDS.magnify
-  const glass = rect(88, 26, 5, 18, '#6B4F3A') + disc(80, 16, 14, INK) + disc(80, 16, 11, '#BFE3FF') + rect(73, 9, 15, 15, EYE) + rect(75, 11, 4, 4, '#FFFFFF') + rect(72, 6, 5, 3, '#FFFFFF', 'fill-opacity=".7"')
+  // a wooden handle angling down from the lens to his hand
+  const handle = [0, 1, 2, 3, 4, 5].map((k) => rect(88 + k * 3, 25 + k * 4, 5, 6, '#6B4F3A') + rect(88 + k * 3, 25 + k * 4, 1.6, 6, '#8B6A4E')).join('')
+  const glass = handle + disc(80, 16, 14, INK) + disc(80, 16, 11, '#BFE3FF') + rect(73, 9, 15, 15, EYE) + rect(75, 11, 4, 4, '#FFFFFF') + rect(72, 6, 5, 3, '#FFFFFF', 'fill-opacity=".7"')
   const scan = anim('translate', D, [[0, '0 0'], [0.4, '-8 0', 'p2io'], [1.1, '-36 2', 'sio'], [1.8, '-8 0', 'sio'], [2.4, '-30 2', 'sio'], [D, '0 0', 'p2io']], ONCE)
   return figure({
     ownProps: true,
     heldRaw: between(wrap(glass, '', scan), D, 0.2, D - 0.25),
-    right: { hold: true, over: true, anims: [scan] },
+    right: { hold: true, over: true, at: 'translate(6 22)', anims: [scan] },
     eyes: { gaze: [anim('translate', D, [[0, '0 0'], [1.1, '-3 0', 'sio'], [1.8, '2 0', 'sio'], [2.4, '-3 0', 'sio'], [D, '0 0', 'p2io']], ONCE)] },
   })
 }
