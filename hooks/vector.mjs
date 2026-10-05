@@ -1551,7 +1551,7 @@ function risky() {
 }
 
 // A message from your phone, or an audio clip: a comically huge ear grows out of the side of his head,
-// and he holds a flat hand up behind it to listen in, one brow raised and the other eye squinting
+// and he holds a flat hand up behind it to listen in, one brow raised and the other lowered
 // An ear seen from the side: the rim curling over the top and down the back, the groove inside it, the bowl with the
 // ear hole at its front edge (toward his face), and the lobe at the bottom
 const EAR_ROWS = [
@@ -1584,20 +1584,20 @@ function listen() {
     rect(-10, 20, 12, 26, SKIN)
   // It grows from where it joins his head
   const grow = anim('scale', D, [[0, '0 0'], [0.2, '0 0'], [0.6, '1.15 1.15', 'back'], [0.75, '1 1', 'p2io'], [2.6, '1 1'], [2.9, '0 0', 'p2in'], [D, '0 0']], ONCE)
-  const sprout = wrap(wrap(ear, 'translate(0 -35)'), 'translate(84 26)', grow)
+  const sprout = wrap(wrap(ear, 'translate(0 -35)'), 'translate(90 26)', grow)
   // A flat hand held up just behind the ear: fingers together and pointing up, the lines between them, a thumb toward the ear
   const line = `stroke="${DARK}" stroke-width="1.6"`
-  const HX = 127
+  const HX = 133
   const HY = -14
   const flatHand = rect(HX - 5, HY + 30, 8, 11, SKIN, line) +
     [[0, 4], [5.5, 0], [11, 2], [16.5, 8]].map(([dx, dy]) => rect(HX + dx, HY + dy, 5.5, 34 - dy, SKIN, line)).join('') +
     rect(HX, HY + 26, 22, 24, SKIN, line) + rect(HX + 1, HY + 22, 20, 8, SKIN) + rect(HX + 4, HY + 48, 15, 10, SKIN, line) +
     rect(HX + 17, HY + 10, 3, 38, '#C96A50', 'fill-opacity=".6"')
-  const raise = anim('translate', D, [[0, '-42 35'], [0.5, '0 0', 'p2out'], [2.7, '0 0'], [D, '-42 35', 'p2io']], ONCE)
+  const raise = anim('translate', D, [[0, '-48 35'], [0.5, '0 0', 'p2out'], [2.7, '0 0'], [D, '-48 35', 'p2io']], ONCE)
   const waves = [0, 0.27, 0.54].map((begin) => wrap(rect(0, 0, 3, 6, '#8FC7F2') + rect(3, 6, 3, 16, '#8FC7F2') + rect(0, 22, 3, 6, '#8FC7F2'), '',
-    anim('translate', 0.8, [[0, '186 0'], [0.8, '158 4']], { begin }), anim('opacity', 0.8, [[0, '0'], [0.2, '1', 'lin'], [0.8, '0', 'lin']], { begin }))).join('')
-  // The look from the photos, without a mouth: one brow raised, the other eye squinting
-  const face = rect(19, 4, 15, 3, INK) + rect(31, 2, 4, 3, INK) + rect(72, 9, 18, 3, INK) + rect(75, 12, 13, 5, SKIN)
+    anim('translate', 0.8, [[0, '192 0'], [0.8, '164 4']], { begin }), anim('opacity', 0.8, [[0, '0'], [0.2, '1', 'lin'], [0.8, '0', 'lin']], { begin }))).join('')
+  // The look from the photos, without a mouth: one brow raised, the other lowered
+  const face = rect(19, 4, 15, 3, INK) + rect(31, 2, 4, 3, INK) + rect(73, 7, 15, 3, INK)
   return figure({
     ownProps: true,
     heldRaw: sprout + between(waves, D, 0.6, 2.6) + between(face, D, 0.45, 2.75),
