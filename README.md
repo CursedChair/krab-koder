@@ -127,7 +127,7 @@ Some only come around once a year, some once every four years, and one only for 
     <td align="center"><img src="docs/rare-gta6.svg" width="240" alt="Searching the web on a laptop under a neon sunset"><br><b>Neon City Launch Day</b><br><sub>searching the web under a neon sunset</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/rare-cybermonday.svg" width="240" alt="Cyber Monday with falling binary"><br><b>Cyber Monday</b><br><sub>raining ones and zeros</sub></td>
+    <td align="center"><img src="docs/rare-cybermonday.svg" width="240" alt="Cyber Monday in auto mode with falling binary"><br><b>Cyber Monday</b><br><sub>raining ones and zeros</sub></td>
     <td align="center"><img src="docs/rare-friday13.svg" width="240" alt="Friday the 13th, checking the calendar"><br><b>Friday the 13th</b><br><sub>beats every other outfit</sub></td>
     <td align="center"><img src="docs/rare-groundhog.svg" width="240" alt="Groundhog Day, watching the clock"><br><b>Groundhog Day</b><br><sub>stuck on the clock again</sub></td>
   </tr>
