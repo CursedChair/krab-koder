@@ -112,7 +112,7 @@ Around 80 outfits for holidays around the world, plus your birthday, a partner's
   <tr>
     <td align="center"><img src="docs/outfit-canada.svg" width="240" alt="Lifting weights on Canada Day"><br><b>Canada Day</b><br><sub>pumping iron for the country</sub></td>
     <td align="center"><img src="docs/outfit-summer.svg" width="240" alt="Summer"><br><b>Summer</b><br><sub>a straw hat and shades</sub></td>
-    <td align="center"><img src="docs/outfit-pirate.svg" width="240" alt="A pirate packing his loot"><br><b>Pirate Day</b><br><sub>Sep 19, arr</sub></td>
+    <td align="center"><img src="docs/outfit-piday.svg" width="240" alt="Boxing up a pie on Pi Day, with digits of pi floating by"><br><b>Pi Day</b><br><sub>March 14, digits of pi drifting by</sub></td>
   </tr>
 </table>
 
