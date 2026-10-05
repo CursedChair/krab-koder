@@ -48,6 +48,7 @@ export const EVENT_MS = {
   mail: 3_000,
   risky: 2_800,
   listen: 3_200,
+  mog: 4_000,
   pop: 2_600,
   oops: 2_800,
   glitch: 4_000,
@@ -148,7 +149,7 @@ export const SINGLE_LOOKS = new Set(['gym', 'flag', 'bedtime', 'compact', 'limit
 export const STATES = ['calm', 'tired', 'strained', 'critical', 'think', 'edit', 'shell', 'look', 'done', 'task', 'compact', 'asleep', 'bedtime', 'gym', 'flag', 'clock', 'calendar', 'limit',
   'permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow',
   'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch',
-  'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen']
+  'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog']
 
 // ctx: { mood, turnRunning, asleep, sleepAgeMs, tool, toolAgeMs, doneAgeMs, wakeAgeMs, gymAgeMs, flagAgeMs, alertAgeMs,
 //        alertState, limit, waiting, events }

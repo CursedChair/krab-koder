@@ -48,11 +48,14 @@ export function startReaction(command) {
 const THANKS = /\b(?:thanks|thank\s*you|thx|ty|tysm|ily|love\s+(?:you|it|this)|you'?re\s+(?:the\s+best|awesome|amazing)|good\s+(?:job|bot|work)|nice\s+(?:job|work|one)|great\s+(?:job|work)|well\s+done|perfect)\b/i
 const FRUSTRATED = /\b(?:wtf|wth|ffs|fml|ugh+|dammit|damn|bro|bruh|smh|broken|still\s+(?:not|doesn'?t|broken)|why\s+(?:is|isn'?t|won'?t|doesn'?t|did)|what\s+the)\b|[!?]{3,}/i
 
-// The reaction a message you send earns from its words: a blush for thanks, a flinch for shouting, nerves for frustration, or null
+const MOG = /\b(?:mog|mogs|mogg?ing|mogged|looksmax\w*|mewing|sigma)\b/i
+
+// The reaction a message you send earns from its words: mogging for mogging, a blush for thanks, a flinch for shouting, nerves for frustration, or null
 export function messageReaction(text) {
   const words = String(text ?? '')
   const letters = words.replace(/[^A-Za-z]/g, '')
   const isShouting = letters.length >= 8 && letters.replace(/[^A-Z]/g, '').length / letters.length >= 0.7
+  if (MOG.test(words)) return 'mog'
   if (THANKS.test(words) && !isShouting) return 'blush'
   if (isShouting) return 'flinch'
   if (FRUSTRATED.test(words)) return 'nervous'
@@ -75,4 +78,4 @@ export const LONG_TURN_MS = 120_000
 // Message counts that earn a trophy
 export const MILESTONES = new Set([100, 500, 1000, 2500, 5000, 10000])
 // What he does now and then in a quiet spell
-export const FIDGETS = ['yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook']
+export const FIDGETS = ['yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'mog']

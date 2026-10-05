@@ -25,7 +25,7 @@ export const COLUMN_PX = 8
 // pole is taller, so the flag gets a taller picture while it plays.
 export const TOP = -46
 export const TOP_TALL = -74
-const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy', 'startled', 'unbox', 'mail', 'music', 'blush', 'listen'])
+const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy', 'startled', 'unbox', 'mail', 'music', 'blush', 'listen', 'mog'])
 export const topFor = (state) => (TALL_LOOKS.has(state) ? TOP_TALL : TOP)
 export const SPRITE_UNITS = 107
 
@@ -1622,6 +1622,29 @@ function listen() {
   }), `translate(-53.5 -${FLOOR})`), `translate(53.5 ${FLOOR})`, leanIn, tilt)
 }
 
+// Mogging: he leans in close and slow, eyes heavy-lidded, one brow furrowed and the other arched, a sharp jawline and a
+// jutting chin, sizing you up side to side, and a glint flashes off his jaw. No mouth needed.
+function mog() {
+  const D = EVENT_SECONDS.mog
+  const lids = rect(18, 10, 17, 7.5, SKIN) + rect(18, 16.5, 17, 1.8, DARK) + rect(72, 10, 17, 7.5, SKIN) + rect(72, 16.5, 17, 1.8, DARK)
+  const brows = rect(16, 6, 7, 3, INK) + rect(22, 7.2, 7, 3, INK) + rect(28, 8.6, 7, 3, INK) +          // furrowed, sloping down toward the middle
+    rect(72, 2.6, 6, 3, INK) + rect(77, 1, 7, 3, INK) + rect(83, 2.2, 6, 3, INK)                         // arched up
+  const jaw = Array.from({ length: 7 }, (_, k) => rect(12 + k * 4.2, 45 + k * 3, 5.5, 3, DARK) + rect(89.5 - k * 4.2, 45 + k * 3, 5.5, 3, DARK)).join('') +
+    rect(40, 62, 27, 6, SKIN) + rect(40, 66.5, 27, 1.8, DARK) + rect(46, 64, 15, 1.5, DARK, 'fill-opacity=".35"')
+  const glint = wrap(pixels(STAR, -5, -5, 2, '#FFFFFF'), 'translate(66 63)', anim('scale', D, [[0, '0 0'], [2.7, '0 0'], [2.85, '1.3 1.3', 'p2out'], [3.2, '0 0', 'p2in'], [D, '0 0']], ONCE))
+  const show = (inner) => between(inner, D, 0.35, D - 0.35)
+  const closer = anim('scale', D, [[0, '1 1'], [0.2, '1 1'], [1.4, '1.15 1.15', 'sio'], [D - 0.5, '1.15 1.15'], [D, '1 1', 'p2io']], ONCE)
+  return wrap(wrap(figure({
+    ownProps: true,
+    heldRaw: show(lids + brows + jaw) + glint,
+    upper: [
+      anim('translate', D, [[0, '0 0'], [0.2, '0 0'], [1.4, '-6 -6', 'sio'], [1.9, '-9 -6', 'sio'], [2.5, '-3 -6', 'sio'], [2.9, '-6 -6', 'sio'], [D - 0.5, '-6 -6'], [D, '0 0', 'p2io']], ONCE),
+      anim('scale', D, [[0, '1 1'], [0.2, '1 1'], [1.4, '1.1 1.1', 'sio'], [D - 0.5, '1.1 1.1'], [D, '1 1', 'p2io']], ONCE),
+    ],
+    eyes: { gaze: [anim('translate', D, [[0, '0 0'], [0.4, '0 2', 'p2io'], [1.9, '-2 2', 'sio'], [2.5, '2 2', 'sio'], [2.9, '0 2', 'sio'], [D, '0 0', 'p2io']], ONCE)] },
+  }), `translate(-53.5 -${FLOOR})`), `translate(53.5 ${FLOOR})`, closer)
+}
+
 // Reading glasses that sit over his eyes (frames wide enough for his eyes to look around inside them)
 function readingGlasses() {
   const frame = (x) => `<rect x="${x}" y="8" width="22" height="17" fill="#BFE3FF" fill-opacity=".25" stroke="${INK}" stroke-width="2.6"/>`
@@ -2349,6 +2372,7 @@ const LOOKS = {
   mail,
   risky,
   listen,
+  mog,
   // One-shot routines have no idle and running pair
   bedtime,
   compact,
@@ -2357,7 +2381,7 @@ const LOOKS = {
 
 export const VECTOR_STATES = Object.keys(LOOKS)
 // The reactions to Claude Code's events: each has one version (no running one); the one-off ones play once and hold
-export const REACTIONS = ['permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen']
+export const REACTIONS = ['permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog']
 
 // extra.percent: how full the limit is, for the clock and the calendar
 export function figureFor(state, gait, extra = {}) {

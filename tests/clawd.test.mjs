@@ -35,7 +35,7 @@ const STATE_CTX = {
   limit: { limit: { state: 'clock', percent: 100 } },
   permission: { waiting: 'permission', turnRunning: true },
   asking: { waiting: 'asking', turnRunning: true },
-  ...Object.fromEntries(['shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen'].map((name) => [name, { turnRunning: true, events: { [name]: 100 } }])),
+  ...Object.fromEntries(['shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog'].map((name) => [name, { turnRunning: true, events: { [name]: 100 } }])),
 }
 
 function run(life, ctx, ticks) {
@@ -106,7 +106,7 @@ test('stateFor picks the look that matches what is happening', () => {
     assert.equal(stateFor({ ...poseCtx, ...patch }), state, state)
   }
   assert.equal(stateFor({ ...poseCtx, wakeAgeMs: 300 }), 'wake')
-  assert.equal(STATES.length, 68)
+  assert.equal(STATES.length, 69)
   assert.deepEqual([...STATES].sort(), Object.keys(STATE_CTX).sort())
 })
 
@@ -335,4 +335,11 @@ test('a finished command earns its reaction: tests passing or failing, a push, a
   assert.equal(commandReaction('git status', ok('')), null)
   assert.equal(commandReaction('npm test', { deny: 'no' }), null)
   assert.ok(!isTestCommand('ls latest'))
+})
+
+test('mogging: the words that set it off', async () => {
+  const { messageReaction } = await import('../hooks/work.mjs')
+  assert.equal(messageReaction('bro is mogging'), 'mog')
+  assert.equal(messageReaction('time to looksmax'), 'mog')
+  assert.equal(messageReaction('smog warning today'), null, 'only the word on its own')
 })
