@@ -134,7 +134,7 @@ Some only come around once a year, some once every four years, and one only for 
   <tr>
     <td align="center"><img src="docs/rare-earthhour.svg" width="240" alt="Earth Hour by candlelight"><br><b>Earth Hour</b><br><sub>only from 8:30 to 9:30 pm</sub></td>
     <td align="center"><img src="docs/rare-leapday.svg" width="240" alt="Leap Day as a frog"><br><b>Leap Day</b><br><sub>once every four years</sub></td>
-    <td align="center"><img src="docs/rare-mexico.svg" width="240" alt="Mexican Independence Day"><br><b>Mexican Independence Day</b><br><sub>a charro hat and El Grito</sub></td>
+    <td align="center"><img src="docs/rare-chile.svg" width="240" alt="Waving the Chilean flag in front of the Andes"><br><b>Chile's Independence Day</b><br><sub>the Andes, a huaso hat and the flag</sub></td>
   </tr>
 </table>
 
