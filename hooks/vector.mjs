@@ -1605,6 +1605,8 @@ function listen() {
     ownProps: true,
     heldRaw: sprout + between(waves, D, 0.6, 2.6) + between(face, D, 0.45, 2.75),
     right: { shape: flatHand, carry: '', anims: [raise] },
+    // his other hand drops a little, clear of his eye
+    left: { anims: [anim('translate', D, [[0, '0 0'], [0.5, '0 6', 'p2io'], [2.6, '0 6'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)] },
     // His head comes closer than his feet: the top of him grows extra, around the middle of his head, for a wide-angle look
     upper: [
       anim('translate', D, [[0, '0 0'], [0.3, '0 0'], [0.8, '-16 -13', 'p2out'], [2.6, '-16 -13'], [3.0, '0 0', 'p2io'], [D, '0 0']], ONCE),
@@ -1614,7 +1616,7 @@ function listen() {
     legs: { perLeg: () => [anim('scale', D, [[0, '1 1'], [0.3, '1 1'], [0.8, '.85 .85', 'p2out'], [2.6, '.85 .85'], [3.0, '1 1', 'p2io'], [D, '1 1']], ONCE)] },
     // Looking straight out at you, eyes a little wider
     eyes: {
-      gaze: [anim('translate', D, [[0, '0 0'], [0.5, '-6 2', 'p2io'], [2.6, '-6 2'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)],
+      gaze: [anim('translate', D, [[0, '0 0'], [0.5, '4 -1', 'p2io'], [2.6, '4 -1'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)],
       scaleAnims: [anim('scale', D, [[0, '1 1'], [0.4, '1.2 1.2', 'p2out'], [2.6, '1.2 1.2'], [2.9, '1 1', 'p2io'], [D, '1 1']], ONCE)],
     },
   }), `translate(-53.5 -${FLOOR})`), `translate(53.5 ${FLOOR})`, leanIn, tilt)
