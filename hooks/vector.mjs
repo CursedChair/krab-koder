@@ -25,7 +25,7 @@ export const COLUMN_PX = 8
 // pole is taller, so the flag gets a taller picture while it plays.
 export const TOP = -46
 export const TOP_TALL = -74
-const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy'])
+const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy', 'startled', 'unbox', 'mail', 'music', 'blush'])
 export const topFor = (state) => (TALL_LOOKS.has(state) ? TOP_TALL : TOP)
 export const SPRITE_UNITS = 107
 
@@ -175,7 +175,7 @@ function figure(o) {
   const core = (o.behind ?? '') + rect(11, 0, 85, 65, SKIN) + (o.worn ?? '') + (outfit?.body ?? '') + eyes(o.eyes) + (o.worn ? '' : wrap(hatReacts((activeMood === 'limit' && outfit?.limitHead !== undefined ? outfit.limitHead : outfit?.head) ?? ''), '', ...(o.headAnims ?? [])))
   const held = (o.held ? wrap(o.held, HELD_FIT, ...(o.heldAnims ?? [])) : '') + (o.heldRaw ?? '')
   // What the outfit has him hold (a flag, a lantern, a rose) rides in his right hand, so it goes wherever the hand goes, with the pole through his grip
-  const carry = o.ownProps || !outfit?.props ? '' : `<g transform="translate(-6 0)">${outfit.props}</g>`
+  const carry = right.carry ?? (o.ownProps || !outfit?.props ? '' : `<g transform="translate(-6 0)">${outfit.props}</g>`)
   const rightHand = { ...right, carry }
   const under = (left.over ? '' : hand('left', left)) + (right.over ? '' : hand('right', rightHand))
   const over = (left.over ? hand('left', left) : '') + (right.over ? hand('right', rightHand) : '')
@@ -1224,6 +1224,367 @@ function stretch() {
   }), `translate(-53.5 -${FLOOR})`), `translate(53.5 ${FLOOR})`, tall)
 }
 
+// ---- Things he does on his own when it's quiet, and more reactions to you and to Claude's work ----
+
+const STAR = ['..X..', '.XXX.', 'XXXXX', '.XXX.', '..X..']
+const HEART = ['.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...']
+const NOTE = ['.XXX', '.X.X', '.X.X', 'XX.X', 'XX..']
+// A filled circle out of one-unit rows, the way he is drawn
+const disc = (cx, cy, R, fill, extra = '') =>
+  Array.from({ length: R * 2 }, (_, i) => {
+    const y = i + 0.5 - R
+    const half = Math.sqrt(Math.max(0, R * R - y * y))
+    return rect(n(cx - half), n(cy - R + i), n(half * 2), 1, fill, extra)
+  }).join('')
+// Shown from one moment to another (seconds), once
+const between = (inner, D, from, to) => wrap(inner, '', anim('opacity', D, [[0, '0'], [from, '0'], [from + 0.05, '1', 'lin'], [to, '1'], [to + 0.05, '0', 'lin'], [D, '0']], ONCE))
+// A hand that moves to a spot and back again: [seconds, 'dx dy'] in between
+const holdAt = (D, dx, dy, from = 0.3, back = D - 0.4) => anim('translate', D, [[0, '0 0'], [from, `${dx} ${dy}`, 'p2out'], [back, `${dx} ${dy}`], [D, '0 0', 'p2io']], ONCE)
+const SCREEN_LIGHT = '#9FD8FF'
+
+// Scrolling his phone (its screen toward him): thumb flicking, the screen's glow on his face, and a little laugh at something
+function phone() {
+  const D = EVENT_SECONDS.phone
+  const PX = 60
+  const PY = 28
+  // The back of the phone faces you (the screen faces him): a case, the camera, and his thumb flicking at the top edge
+  const device = rect(PX, PY, 16, 26, '#2B2D33') + rect(PX + 1.5, PY + 1.5, 13, 23, '#3F8CE8') + rect(PX + 3, PY + 3, 5, 5, '#2B2D33') + rect(PX + 4, PY + 4, 3, 3, '#6F7C8C') + rect(PX + 5.5, PY + 15, 5, 5, '#2E6FC0')
+  const thumb = wrap(rect(PX + 8, PY - 3, 6, 5, SKIN, `stroke="${DARK}" stroke-width="1"`), '', anim('translate', 0.9, [[0, '0 3'], [0.35, '0 -1', 'p2out'], [0.9, '0 3', 'p2io']]))
+  const glow = rect(11, 20, 85, 16, SCREEN_LIGHT, 'fill-opacity=".14"') + rect(11, 10, 85, 10, SCREEN_LIGHT, 'fill-opacity=".07"')
+  const laugh = anim('translate', D, [[0, '0 0'], [2.6, '0 0'], [2.75, '0 -2.5', 'p2out'], [2.9, '0 0', 'p2in'], [3.05, '0 -2.5', 'p2out'], [3.2, '0 0', 'p2in'], [D, '0 0']], ONCE)
+  return figure({
+    ownProps: true,
+    heldRaw: between(glow + device + thumb, D, 0.3, D - 0.45),
+    right: { hold: true, anims: [holdAt(D, -24, 14)] },
+    upper: [laugh],
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.4, '3 6', 'p2io'], [D - 0.4, '3 6'], [D, '0 0', 'p2io']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [2.55, '1 1'], [2.65, '1 .3', 'p2io'], [3.3, '1 .3'], [3.45, '1 1', 'p2io'], [D, '1 1']], ONCE)],
+    },
+  })
+}
+
+// Sipping a coffee: brings the steaming mug up, sips with his eyes shut, and lets out a happy sigh
+function coffee() {
+  const D = EVENT_SECONDS.coffee
+  const mug = rect(0, 0, 16, 16, CREAM) + rect(0, 0, 16, 3, '#5A3A22') + rect(16, 3, 5, 3, CREAM) + rect(19, 3, 3, 9, CREAM) + rect(16, 9, 5, 3, CREAM) + rect(4, 7, 8, 5, SPARK)
+  const steam = [2, 7, 12].map((x, i) => wrap(rect(x, -6, 2, 4, '#E8E4DA') + rect(x + 1.5, -11, 2, 4, '#E8E4DA'), '',
+    anim('translate', 1.2, [[0, '0 2'], [1.2, '0 -8']], { begin: i * 0.4 }), anim('opacity', 1.2, [[0, '0'], [0.3, '.8', 'lin'], [1.2, '0', 'lin']], { begin: i * 0.4 }))).join('')
+  // Where the mug is (its top left corner) over time; the hand holds it from the left
+  const path = [[0, 18, 23], [0.5, 30, 32, 'p2io'], [1.5, 30, 32], [1.8, 38, 18, 'p2io'], [2.5, 38, 18], [2.8, 30, 32, 'p2io'], [D - 0.5, 30, 32], [D, 18, 23, 'p2io']]
+  const mugAt = anim('translate', D, path.map(([t, x, y, e]) => [t, `${x} ${y}`, e]), ONCE)
+  const handAt = anim('translate', D, path.map(([t, x, y, e]) => [t, `${x - 18} ${y - 23}`, e]), ONCE)
+  const tilt = anim('rotate', D, [[0, '0 8 8'], [1.5, '0 8 8'], [1.8, '-28 8 8', 'p2io'], [2.5, '-28 8 8'], [2.8, '0 8 8', 'p2io'], [D, '0 8 8']], ONCE)
+  const held = wrap(wrap(mug + between(steam, D, 0, 1.6), '', tilt), '', mugAt)
+  const sigh = between(rect(64, 30, 8, 5, '#E8E4DA', 'fill-opacity=".8"') + rect(70, 27, 6, 4, '#E8E4DA', 'fill-opacity=".6"'), D, 2.9, 3.6)
+  return figure({
+    ownProps: true,
+    heldRaw: held + sigh,
+    left: { hold: true, over: true, anims: [handAt] },
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.5, '-2 4', 'p2io'], [1.7, '-2 4'], [1.8, '0 0'], [D, '0 0']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [1.7, '1 1'], [1.8, '1 .15', 'p2io'], [2.6, '1 .15'], [2.8, '1 .3', 'p2io'], [3.6, '1 .3'], [3.8, '1 1', 'p2io'], [D, '1 1']], ONCE)],
+    },
+  })
+}
+
+// A handheld game: hunched over it, mashing buttons, a little hero hopping on the screen, and a star when he wins
+function game() {
+  const D = EVENT_SECONDS.game
+  const GX = 34
+  const GY = 38
+  const device = rect(GX, GY, 40, 20, '#8A8F98') + rect(GX + 11, GY + 3, 18, 13, '#2E3B2A') + rect(GX + 13, GY + 5, 14, 9, '#9BBC0F') +
+    rect(GX + 3, GY + 8, 6, 2, INK) + rect(GX + 5, GY + 6, 2, 6, INK) + rect(GX + 32, GY + 6, 3, 3, '#C4553D') + rect(GX + 35, GY + 10, 3, 3, '#C4553D')
+  const hero = wrap(rect(0, 0, 3, 3, '#306230'), '', anim('translate', 0.8, [[0, `${GX + 14} ${GY + 10}`], [0.2, `${GX + 18} ${GY + 6}`, 'p2out'], [0.4, `${GX + 22} ${GY + 10}`, 'p2in'], [0.8, `${GX + 14} ${GY + 10}`]]))
+  const mash = (begin) => anim('translate', 0.18, [[0, '0 0'], [0.09, '0 -1.5'], [0.18, '0 0']], { begin })
+  const win = wrap(pixels(STAR, -5, -5, 2, '#FFD23F'), 'translate(54 -10)', anim('scale', D, [[0, '0 0'], [3.2, '0 0'], [3.4, '1.3 1.3', 'p2out'], [3.9, '0 0', 'p2in'], [D, '0 0']], ONCE))
+  const hop = anim('translate', D, [[0, '0 0'], [3.2, '0 0'], [3.35, '0 -6', 'p2out'], [3.5, '0 0', 'p2in'], [D, '0 0']], ONCE)
+  return wrap(figure({
+    ownProps: true,
+    heldRaw: between(device + hero, D, 0.3, D - 0.45),
+    left: { hold: true, over: true, anims: [holdAt(D, 22, 18), mash(0)] },
+    right: { hold: true, over: true, anims: [holdAt(D, -22, 18), mash(0.09)] },
+    upper: [anim('translate', D, [[0, '0 0'], [0.3, '0 3', 'p2out'], [3.1, '0 3'], [3.3, '0 0', 'p2io'], [D, '0 0']], ONCE)],
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.3, '0 6', 'p2io'], [3.1, '0 6'], [3.3, '0 0', 'p2io'], [D, '0 0']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [0.3, '1 .65', 'p2io'], [3.2, '1 .65'], [3.3, '1 .3', 'p2io'], [3.9, '1 .3'], [4.1, '1 1', 'p2io'], [D, '1 1']], ONCE)],
+    },
+  }), '', hop) + win
+}
+
+// Bubble gum: blows a big pink bubble that grows and grows, until it pops all over his face, and he wipes it off
+function gum() {
+  const D = EVENT_SECONDS.gum
+  const PINK = '#F28AB8'
+  const bubble = wrap(wrap(disc(0, 0, 11, PINK) + rect(-6, -7, 3, 3, '#FFFFFF'), '', anim('scale', D, [[0, '0 0'], [0.5, '.15 .15'], [1.4, '.6 .6', 'sio'], [1.6, '.55 .55', 'sio'], [2.5, '1.1 1.1', 'sio'], [2.6, '1.3 1.3', 'p2out'], [D, '1.3 1.3']], ONCE),
+    anim('opacity', D, [[0, '1'], [2.6, '1'], [2.62, '0', 'lin'], [D, '0']], ONCE)), 'translate(53 33)')
+  const splat = [[18, 26, 14, 5], [40, 30, 22, 4], [70, 25, 14, 6], [30, 20, 6, 3], [66, 33, 9, 3]].map(([x, y, w, h]) => rect(x, y, w, h, PINK)).join('')
+  const wipe = anim('translate', D, [[0, '0 0'], [3.2, '0 0'], [3.5, '60 10', 'p2io'], [3.7, '60 10'], [D, '0 0', 'p2io']], ONCE)
+  return figure({
+    ownProps: true,
+    heldRaw: bubble + between(splat, D, 2.6, 3.6),
+    left: { anims: [anim('translate', D, [[0, '0 0'], [3.0, '0 0'], [3.2, '4 -6', 'p2out'], [3.7, '64 4', 'p2io'], [D, '0 0', 'p2io']], ONCE)] },
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.6, '0 5', 'p2io'], [2.6, '0 5'], [2.7, '0 0'], [D, '0 0']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [1.6, '1 1'], [2.5, '1.2 1.2', 'sio'], [2.62, '1 .1', 'p2out'], [3.6, '1 .1'], [3.8, '1 1', 'p2io'], [D, '1 1']], ONCE)],
+    },
+  }) + wrap('', '', wipe)
+}
+
+// Music: headphones on, eyes shut, bopping to the beat with notes floating up from the ear cups
+function music() {
+  const D = EVENT_SECONDS.music
+  const RED = '#C4553D'
+  const BAND = '#8A8F98'
+  const phones = rect(10, -12, 87, 4, BAND) + rect(4, -9, 6, 15, BAND) + rect(97, -9, 6, 15, BAND) + rect(-3, 4, 12, 18, RED) + rect(98, 4, 12, 18, RED) + rect(-3, 4, 12, 3, '#E5584B') + rect(98, 4, 12, 3, '#E5584B')
+  const notes = [[-6, 0, '#8FC7F2'], [108, 0.5, '#F2C230'], [-10, 1.0, '#E5584B'], [112, 1.5, '#5E8C6A']].map(([x, begin, fill]) =>
+    wrap(pixels(NOTE, 0, 0, 2, fill), '', anim('translate', 2, [[0, `${x} 6`], [1, `${x + (x < 50 ? -4 : 4)} -14`, 'sio'], [2, `${x} -30`, 'sio']], { begin }),
+      anim('opacity', 2, [[0, '0'], [0.2, '1', 'lin'], [1.6, '1'], [2, '0', 'lin']], { begin }))).join('')
+  return figure({
+    ownProps: true,
+    legs: { period: 0.5 },
+    upper: [bob(0.5, 2)],
+    heldRaw: between(phones + notes, D, 0.2, D - 0.35),
+    left: { anims: [swing(0.5, 3, false)] },
+    right: { anims: [swing(0.5, 3, true)] },
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [0.3, '1 .3', 'p2io'], [D - 0.4, '1 .3'], [D, '1 1', 'p2io']], ONCE)] },
+  })
+}
+
+// Reading: puts on his reading glasses, holds up a book (its cover toward you, the pages toward him), reads, and turns a page
+function readbook() {
+  const D = EVENT_SECONDS.readbook
+  const glasses = wrap(readingGlasses(), '', anim('translate', D, [[0, '0 -34'], [0.5, '0 0', 'p2out'], [D - 0.5, '0 0'], [D, '0 -34', 'p2in']], ONCE),
+    anim('opacity', D, [[0, '0'], [0.05, '1', 'lin'], [D - 0.05, '1'], [D, '0', 'lin']], ONCE))
+  const COVER = '#6B4F3A'
+  const cover = rect(24, 30, 60, 34, '#4E3828') + rect(26, 32, 56, 30, COVER) + rect(26, 29, 56, 3, CREAM) + rect(36, 38, 36, 6, '#E7B04A') + rect(40, 40, 28, 2, COVER) +
+    rect(48, 50, 12, 7, SPARK) + rect(50, 52, 2, 2, INK) + rect(56, 52, 2, 2, INK)
+  // a page going over, seen from behind the book: its top edge sweeps across in an arc
+  const page = wrap(rect(-3, -5, 6, 6, CREAM), '', anim('translate', D, [[0, '78 30'], [2.9, '78 30'], [3.15, '54 18', 'p2out'], [3.4, '30 30', 'p2in'], [D, '30 30']], ONCE),
+    anim('opacity', D, [[0, '0'], [2.9, '0'], [2.92, '1', 'lin'], [3.4, '1'], [3.42, '0', 'lin'], [D, '0']], ONCE))
+  const read = [[0.6, '-4 5'], [1.4, '4 5', 'lin'], [1.5, '-4 6', 'p2io'], [2.3, '4 6', 'lin'], [2.9, '4 6'], [3.1, '0 3', 'p2io'], [3.6, '-4 5', 'p2io'], [4.3, '4 5', 'lin']]
+  return figure({
+    ownProps: true,
+    heldRaw: between(cover + page, D, 0.5, D - 0.5) + glasses,
+    left: { hold: true, over: true, anims: [holdAt(D, 22, 16, 0.5, D - 0.5)] },
+    right: { hold: true, over: true, anims: [holdAt(D, -22, 16, 0.5, D - 0.5)] },
+    eyes: { gaze: [anim('translate', D, [[0, '0 0'], ...read, [D - 0.4, '0 5'], [D, '0 0', 'p2io']], ONCE)], blinkCycle: 3.1, blinkAt: 2.95 },
+  })
+}
+
+// You stopped Claude mid-reply: he jumps, startled, hands up, with a "!" over his head
+function startled() {
+  const D = EVENT_SECONDS.startled
+  const jump = anim('translate', D, [[0, '0 0'], [0.12, '0 -16', 'p2out'], [0.4, '0 0', 'p2in'], [0.5, '0 -3', 'p2out'], [0.6, '0 0', 'p2in'], [D, '0 0']], ONCE)
+  const handsUp = (dx) => anim('translate', D, [[0, '0 0'], [0.12, `${dx} -20`, 'p2out'], [1.2, `${dx} -20`], [1.5, '0 0', 'p2io'], [D, '0 0']], ONCE)
+  const bang = wrap(pixels(PIXEL['!'], -1.5, -7.5, 3, '#E5584B'), 'translate(54 -30)', anim('scale', D, [[0, '0 0'], [0.1, '0 0'], [0.25, '1.3 1.3', 'p2out'], [0.35, '1 1', 'p2io'], [1.3, '1 1'], [1.5, '0 0', 'p2in'], [D, '0 0']], ONCE))
+  return wrap(figure({
+    ownProps: true,
+    left: { hold: true, anims: [handsUp(-6)] },
+    right: { hold: true, anims: [handsUp(6)] },
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [0.08, '1.35 1.35', 'p2out'], [1.1, '1.35 1.35'], [1.4, '1 1', 'p2io'], [D, '1 1']], ONCE)] },
+  }), '', jump) + bang
+}
+
+// You said thanks: he blushes, a heart floats up, and he sways shyly with his hands together
+function blush() {
+  const D = EVENT_SECONDS.blush
+  const cheeks = rect(15, 25, 14, 4, '#F28A8A', 'fill-opacity=".75"') + rect(78, 25, 14, 4, '#F28A8A', 'fill-opacity=".75"')
+  const heart = wrap(pixels(HEART, -8.4, -6, 2.4, '#E5584B'), '', anim('translate', D, [[0, '54 -4'], [0.3, '54 -4'], [2.2, '58 -40', 'sio'], [D, '58 -40']], ONCE),
+    anim('scale', D, [[0, '0 0'], [0.3, '0 0'], [0.5, '1.2 1.2', 'p2out'], [0.6, '1 1', 'p2io'], [D, '1 1']], ONCE),
+    anim('opacity', D, [[0, '1'], [1.9, '1'], [2.3, '0', 'lin'], [D, '0']], ONCE))
+  return figure({
+    ownProps: true,
+    heldRaw: between(cheeks, D, 0.15, D - 0.3) + heart,
+    left: { hold: true, over: true, anims: [holdAt(D, 24, 10, 0.3, D - 0.3)] },
+    right: { hold: true, over: true, anims: [holdAt(D, -24, 10, 0.3, D - 0.3)] },
+    upper: [anim('rotate', D, [[0, '0 53 86'], [0.6, '-3 53 86', 'sio'], [1.2, '3 53 86', 'sio'], [1.8, '-3 53 86', 'sio'], [D, '0 53 86', 'sio']], ONCE)],
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [0.2, '1 .3', 'p2io'], [D - 0.3, '1 .3'], [D, '1 1', 'p2io']], ONCE)] },
+  })
+}
+
+// You sound frustrated: he sweats, his eyes dart about, and he fidgets with his hands
+function nervous() {
+  const D = EVENT_SECONDS.nervous
+  const jitter = anim('translate', 0.16, [[0, '0 0'], [0.04, '-0.8 0'], [0.08, '0.8 0'], [0.12, '-0.5 0'], [0.16, '0 0']])
+  const dart = [0, 0.35, 0.7, 1.05, 1.4, 1.75, 2.1].map((t, i) => [t + 0.05, `${i % 2 ? 5 : -5} ${i % 3 === 0 ? 2 : 0}`, 'p2io'])
+  return figure({
+    ownProps: true,
+    left: { hold: true, over: true, anims: [holdAt(D, 26, 12, 0.25, D - 0.3), jitter] },
+    right: { hold: true, over: true, anims: [holdAt(D, -26, 12, 0.25, D - 0.3), anim('translate', 0.16, [[0, '0 0'], [0.08, '0 -1'], [0.16, '0 0']])] },
+    upper: [jitter],
+    eyes: { gaze: [anim('translate', D, [[0, '0 0'], ...dart, [D - 0.2, '0 0', 'p2io'], [D, '0 0']], ONCE)] },
+    props: drop(4, -6, 0.1) + drop(96, -2, 0.9),
+  })
+}
+
+// You wrote in ALL CAPS: he flinches, squashed down with his eyes squeezed shut, shock lines around his head
+function flinch() {
+  const D = EVENT_SECONDS.flinch
+  const shock = rect(-10, -6, 9, 2.5, INK) + rect(108, -6, 9, 2.5, INK) + rect(52, -18, 2.5, 9, INK) + rect(-6, 14, 7, 2.5, INK) + rect(106, 14, 7, 2.5, INK)
+  const squash = anim('scale', D, [[0, '1 1'], [0.08, '1.1 .82', 'p2out'], [0.9, '1.06 .88'], [1.2, '1 1', 'back'], [D, '1 1']], ONCE)
+  return wrap(wrap(figure({
+    ownProps: true,
+    heldRaw: between(shock, D, 0.05, 0.8),
+    left: { hold: true, anims: [holdAt(D, 10, -10, 0.08, 1.0)] },
+    right: { hold: true, anims: [holdAt(D, -10, -10, 0.08, 1.0)] },
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [0.06, '1 .1', 'p2out'], [1.0, '1 .1'], [1.2, '1 1', 'p2io'], [D, '1 1']], ONCE)] },
+  }), `translate(-53.5 -${FLOOR})`), `translate(53.5 ${FLOOR})`, squash)
+}
+
+// You pasted a picture or a file: he holds up a camera, the flash goes off, and a photo slides out
+function camera() {
+  const D = EVENT_SECONDS.camera
+  const body = rect(34, 14, 40, 24, INK) + rect(36, 16, 36, 4, '#4A4E57') + disc(54, 27, 7, '#6F7C8C') + disc(54, 27, 4, '#2B2D33') + rect(52, 24, 2, 2, '#FFFFFF') + rect(64, 10, 7, 4, '#E8E4DA')
+  const photo = wrap(rect(44, 30, 20, 20, CREAM) + rect(46, 32, 16, 13, '#8FC7F2') + rect(48, 39, 6, 6, '#5E8C6A'), '', anim('translate', D, [[0, '0 0'], [1.4, '0 0'], [2.0, '0 18', 'p2out'], [D, '0 18']], ONCE))
+  const flash = wrap(disc(67, 12, 44, '#FFFFFF', 'fill-opacity=".25"') + disc(67, 12, 28, '#FFFFFF', 'fill-opacity=".45"') + disc(67, 12, 14, '#FFFFFF', 'fill-opacity=".8"'), '', anim('opacity', D, [[0, '0'], [1.0, '0'], [1.05, '1', 'lin'], [1.4, '0', 'p2out'], [D, '0']], ONCE))
+  const sparkle = wrap(pixels(STAR, -5, -5, 2, '#FFF3B0'), 'translate(67 8)', anim('scale', D, [[0, '0 0'], [1.0, '0 0'], [1.1, '1.4 1.4', 'p2out'], [1.5, '0 0', 'p2in'], [D, '0 0']], ONCE))
+  return figure({
+    ownProps: true,
+    heldRaw: between(photo + body, D, 0.3, D - 0.35) + sparkle,
+    left: { hold: true, over: true, anims: [holdAt(D, 16, -2, 0.3, D - 0.35)] },
+    right: { hold: true, over: true, anims: [holdAt(D, -16, -2, 0.3, D - 0.35)] },
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [1.0, '1 1'], [1.05, '1 .1', 'p2out'], [1.6, '1 .1'], [1.8, '1 1', 'p2io'], [D, '1 1']], ONCE)] },
+  }) + flash
+}
+
+// Claude has been working for a while: he checks his watch and taps his foot
+function tapfoot() {
+  const D = EVENT_SECONDS.tapfoot
+  const watch = rect(0, 36, 22, 4, INK) + rect(7, 33, 8, 9, INK) + rect(8.5, 34.5, 5, 6, '#E8E4DA') + rect(10.5, 35.5, 1, 3, INK)
+  const tap = anim('translate', 0.4, [[0, '0 0'], [0.12, '0 -4', 'p2out'], [0.24, '0 0', 'p2in'], [0.4, '0 0']])
+  const marks = wrap(rect(100, 80, 4, 1.5, INK) + rect(100, 84, 5, 1.5, INK), '', anim('opacity', 0.4, [[0, '0'], [0.22, '0'], [0.24, '1', 'lin'], [0.34, '0', 'lin'], [0.4, '0']]))
+  return figure({
+    ownProps: true,
+    legs: { perLeg: (i) => (i === 3 ? [tap] : []) },
+    heldRaw: '',
+    left: { hold: true, carry: watch, anims: [holdAt(D, 24, 6)] },
+    props: marks,
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.4, '-3 7', 'p2io'], [2.2, '-3 7'], [2.5, '0 0', 'p2io'], [D, '0 0']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [2.4, '1 1'], [2.5, '1 .5', 'p2io'], [3.0, '1 .5'], [D, '1 1', 'p2io']], ONCE)],
+    },
+  })
+}
+
+// Coding late at night: a huge yawn behind his hand, eyes shut, and a little tear
+function yawn() {
+  const D = EVENT_SECONDS.yawn
+  const mouth = wrap(wrap(rect(-7, -8, 14, 16, '#5A2420') + rect(-4, 3, 8, 4, '#E5584B'), '', anim('scale', D, [[0, '0 0'], [0.3, '0 0'], [1.0, '1 1', 'p2out'], [2.0, '1 1'], [2.4, '0 0', 'p2in'], [D, '0 0']], ONCE)), 'translate(54 31)')
+  const tear = wrap(rect(0, 0, 2.5, 3.5, SWEAT), 'translate(86 22)', anim('translate', D, [[0, '0 0'], [2.0, '0 0'], [2.8, '0 8', 'p2in'], [D, '0 8']], ONCE), anim('opacity', D, [[0, '0'], [2.0, '0'], [2.05, '1', 'lin'], [2.8, '1'], [2.9, '0', 'lin'], [D, '0']], ONCE))
+  return figure({
+    ownProps: true,
+    heldRaw: mouth + tear,
+    right: { hold: true, over: true, anims: [holdAt(D, -40, 2, 1.1, 2.0)] },
+    upper: [anim('translate', D, [[0, '0 0'], [0.9, '0 -3', 'sio'], [2.1, '0 -3'], [2.6, '0 0', 'sio'], [D, '0 0']], ONCE)],
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [0.4, '1 .1', 'p2io'], [2.3, '1 .1'], [2.7, '1 .5', 'p2io'], [D, '1 .5']], ONCE)] },
+  })
+}
+
+// Installing packages: a delivery box drops from the sky, he opens the flaps, and the new packages pop out
+function unbox() {
+  const D = EVENT_SECONDS.unbox
+  const BOX = '#C8935A'
+  const BOX_DARK = '#A8743F'
+  const box = rect(28, 42, 52, 30, BOX) + rect(28, 42, 52, 3, BOX_DARK) + rect(40, 52, 28, 4, BOX_DARK, 'fill-opacity=".5"')
+  const flap = (x, pivot, deg) => wrap(rect(x, 38, 26, 5, BOX_DARK), '', anim('rotate', D, [[0, `0 ${pivot} 42`], [1.1, `0 ${pivot} 42`], [1.4, `${deg} ${pivot} 42`, 'p2out'], [D, `${deg} ${pivot} 42`]], ONCE))
+  const drop_ = anim('translate', D, [[0, '0 -110'], [0.45, '0 0', 'p2in'], [0.55, '0 -5', 'p2out'], [0.65, '0 0', 'p2in'], [D, '0 0']], ONCE)
+  const cubes = [[38, -6, CONFETTI[1]], [54, -18, CONFETTI[2]], [70, -8, CONFETTI[4]]].map(([x, y, fill], i) =>
+    wrap(rect(-4, -4, 8, 8, fill) + rect(-4, -4, 8, 2, '#FFFFFF', 'fill-opacity=".4"'), '', anim('translate', D, [[0, '54 50'], [1.5 + i * 0.12, '54 50'], [2.0 + i * 0.12, `${x} ${y}`, 'p2out'], [D, `${x} ${y}`]], ONCE),
+      anim('opacity', D, [[0, '0'], [1.5 + i * 0.12, '0'], [1.55 + i * 0.12, '1', 'lin'], [D, '1']], ONCE))).join('')
+  return figure({
+    ownProps: true,
+    heldRaw: wrap(cubes + box + flap(28, 28, -130) + flap(54, 80, 130), '', drop_),
+    left: { hold: true, over: true, anims: [holdAt(D, 24, 20, 0.6, D - 0.3)] },
+    right: { hold: true, over: true, anims: [holdAt(D, -24, 20, 0.6, D - 0.3)] },
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 -6'], [0.45, '0 6', 'p2in'], [1.6, '0 6'], [2.0, '0 -5', 'p2out'], [D, '0 -5']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [1.9, '1 1'], [2.0, '1.3 1.3', 'p2out'], [2.6, '1.3 1.3'], [2.8, '1 .3', 'p2io'], [D, '1 .3']], ONCE)],
+    },
+  })
+}
+
+// Searching the code: he peers through a big magnifying glass, his eye huge behind the lens, sweeping side to side
+function magnify() {
+  const D = EVENT_SECONDS.magnify
+  const glass = rect(88, 26, 5, 18, '#6B4F3A') + disc(80, 16, 14, INK) + disc(80, 16, 11, '#BFE3FF') + rect(73, 9, 15, 15, EYE) + rect(75, 11, 4, 4, '#FFFFFF') + rect(72, 6, 5, 3, '#FFFFFF', 'fill-opacity=".7"')
+  const scan = anim('translate', D, [[0, '0 0'], [0.4, '-8 0', 'p2io'], [1.1, '-36 2', 'sio'], [1.8, '-8 0', 'sio'], [2.4, '-30 2', 'sio'], [D, '0 0', 'p2io']], ONCE)
+  return figure({
+    ownProps: true,
+    heldRaw: between(wrap(glass, '', scan), D, 0.2, D - 0.25),
+    right: { hold: true, over: true, anims: [scan] },
+    eyes: { gaze: [anim('translate', D, [[0, '0 0'], [1.1, '-3 0', 'sio'], [1.8, '2 0', 'sio'], [2.4, '-3 0', 'sio'], [D, '0 0', 'p2io']], ONCE)] },
+  })
+}
+
+// Opening a pull request: he folds an envelope shut, a coral seal stamps it, and it flies off
+function mail() {
+  const D = EVENT_SECONDS.mail
+  const env = rect(32, 34, 44, 28, CREAM) + rect(32, 34, 44, 2, PAPER_SHADE) +
+    [0, 1, 2, 3, 4, 5, 6, 7].map((i) => rect(32 + i * 2.75, 36 + i * 1.6, 2.75, 1.6, PAPER_SHADE) + rect(73.25 - i * 2.75, 36 + i * 1.6, 2.75, 1.6, PAPER_SHADE)).join('')
+  const flap = wrap(wrap([0, 1, 2, 3, 4, 5, 6, 7].map((i) => rect(32 + i * 2.75, 34 - (8 - i) * 1.6, 44 - i * 5.5, 1.6, '#E9E4D6')).join(''), 'translate(0 -34)'), 'translate(0 34)',
+    anim('scale', D, [[0, '1 1'], [0.6, '1 1'], [0.9, '1 -1', 'p2io'], [D, '1 -1']], ONCE))
+  const seal = wrap(disc(0, 0, 5, SPARK) + rect(-1, -1, 2, 2, '#F2A08A'), 'translate(54 47)', anim('scale', D, [[0, '0 0'], [1.1, '0 0'], [1.25, '1.4 1.4', 'p2out'], [1.4, '1 1', 'p2io'], [D, '1 1']], ONCE))
+  const away = anim('translate', D, [[0, '0 0'], [1.8, '0 0'], [1.9, '0 4', 'p2out'], [2.7, '90 -110', 'p2in'], [D, '90 -110']], ONCE)
+  return figure({
+    ownProps: true,
+    heldRaw: wrap(env + flap + seal, '', away, anim('opacity', D, [[0, '0'], [0.2, '1', 'lin'], [2.6, '1'], [2.7, '0', 'lin'], [D, '0']], ONCE)),
+    left: { hold: true, over: true, anims: [holdAt(D, 24, 14, 0.25, 1.8)] },
+    right: { hold: true, over: true, anims: [anim('translate', D, [[0, '0 0'], [0.25, '-24 14', 'p2out'], [1.8, '-24 14'], [2.1, '6 -22', 'p2out'], [2.6, '6 -22'], [D, '0 0', 'p2io']], ONCE)] },
+    eyes: { gaze: [anim('translate', D, [[0, '0 0'], [0.3, '0 6', 'p2io'], [1.8, '0 6'], [2.4, '5 -6', 'p2io'], [D, '5 -6']], ONCE)] },
+  })
+}
+
+// A risky command (rm -rf, a force push, sudo): he hides behind his hands, peeking through, sweating
+function risky() {
+  const D = EVENT_SECONDS.risky
+  const tremble = anim('translate', 0.2, [[0, '0 0'], [0.05, '-0.7 0'], [0.1, '0.7 0'], [0.15, '-0.4 0'], [0.2, '0 0']])
+  const cover = (dx, peek) => anim('translate', D, [[0, '0 0'], [0.2, `${dx} -10`, 'p2out'], [0.9, `${dx} -10`], [1.1, `${dx + peek} -10`, 'p2io'], [1.9, `${dx + peek} -10`], [2.1, `${dx} -10`, 'p2io'], [D - 0.3, `${dx} -10`], [D, '0 0', 'p2io']], ONCE)
+  return figure({
+    ownProps: true,
+    left: { hold: true, over: true, anims: [cover(20, -5)] },
+    right: { hold: true, over: true, anims: [cover(-10, 5)] },
+    upper: [tremble],
+    eyes: { gaze: [anim('translate', D, [[0, '0 0'], [1.1, '-3 0', 'p2io'], [1.9, '3 0', 'p2io'], [D, '0 0', 'p2io']], ONCE)] },
+    props: drop(4, -6, 0.2) + drop(98, -4, 1.0),
+  })
+}
+
+// A message from your phone, or an audio clip: a comically huge ear sprouts from his head and he cups a hand behind it to listen in
+function listen() {
+  const D = EVENT_SECONDS.listen
+  const EAR = '#E8957A'
+  const shape = (inset, fill) => [[8, 0, 22, 6], [3, 6, 33, 8], [0, 14, 38, 30], [3, 44, 33, 10], [8, 54, 24, 6], [13, 60, 14, 4]]
+    .map(([x, y, w, h]) => rect(x + inset, y + inset, Math.max(0, w - inset * 2), Math.max(0, h - (y === 0 || y === 60 ? inset : 0)), fill)).join('')
+  const join = rect(-10, 12, 14, 34, SKIN)
+  const ear = shape(0, DARK) + shape(2, SKIN) + join + rect(10, 8, 20, 6, EAR) + rect(24, 14, 8, 26, EAR) + rect(8, 38, 20, 8, EAR) + rect(14, 20, 10, 16, '#C4553D') + rect(6, 16, 3, 22, '#FFE6D2', 'fill-opacity=".6"')
+  const grow = anim('scale', D, [[0, '0 0'], [0.2, '0 0'], [0.6, '1.15 1.15', 'back'], [0.75, '1 1', 'p2io'], [2.6, '1 1'], [2.9, '0 0', 'p2in'], [D, '0 0']], ONCE)
+  const wiggle = anim('rotate', 0.9, [[0, '0 0 0'], [0.45, '4 0 0', 'sio'], [0.9, '0 0 0', 'sio']])
+  const sproutAt = wrap(wrap(wrap(ear, 'translate(0 -32)'), '', wiggle), 'translate(92 26)', grow)
+  const waves = [0, 0.27, 0.54].map((begin) => wrap(rect(0, 0, 3, 6, '#8FC7F2') + rect(3, 6, 3, 16, '#8FC7F2') + rect(0, 22, 3, 6, '#8FC7F2'), '',
+    anim('translate', 0.8, [[0, '170 0'], [0.8, '140 4']], { begin }), anim('opacity', 0.8, [[0, '0'], [0.2, '1', 'lin'], [0.8, '0', 'lin']], { begin }))).join('')
+  const SHADE = '#C96A50'
+  const line = `stroke="${DARK}" stroke-width="1.2"`
+  const finger = (x, h, deg) => wrap(
+    rect(x, 21 - h, 5, h + 3, SKIN, line) + rect(x + 0.8, 19.5 - h, 3.4, 2, SKIN) + rect(x + 3.6, 22 - h, 1.2, h - 1, SHADE, 'fill-opacity=".7"') +
+      rect(x + 1, 21 - h * 0.45, 3, 0.9, DARK, 'fill-opacity=".55"') + rect(x + 1, 21 - h * 0.8, 3, 0.7, DARK, 'fill-opacity=".35"'),
+    `rotate(${deg} ${x + 2.5} 22)`)
+  const thumb = wrap(rect(0, 0, 6, 13, SKIN, line) + rect(0.8, -1.5, 4.4, 2, SKIN) + rect(4.4, 1, 1.2, 10, SHADE, 'fill-opacity=".7"'), 'translate(82 34) rotate(-38)')
+  const palm = rect(88, 29, 13, 0.9, DARK, 'fill-opacity=".45"') + rect(89, 34, 10, 0.9, DARK, 'fill-opacity=".45"') + rect(94, 27, 0.9, 12, DARK, 'fill-opacity=".3"') + rect(104, 22, 3, 21, SHADE, 'fill-opacity=".5"')
+  const cupped = thumb + finger(85.5, 15, -9) + finger(91, 18, -3) + finger(96.5, 17, 3) + finger(102, 12, 10) + palm
+  return figure({
+    ownProps: true,
+    heldRaw: sproutAt + between(waves, D, 0.6, 2.6),
+    // his hand raised and cupped against the lower half of the ear, palm out, fingers spread up it
+    right: { hold: true, over: true, carry: cupped, anims: [holdAt(D, 28, 10, 0.5, 2.7)] },
+    upper: [anim('translate', D, [[0, '0 0'], [0.5, '-3 1', 'p2io'], [2.6, '-3 1'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)],
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.5, '-5 0', 'p2io'], [2.6, '-5 0'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [0.5, '1.15 1.15', 'p2io'], [2.6, '1.15 1.15'], [2.9, '1 1', 'p2io'], [D, '1 1']], ONCE)],
+    },
+  })
+}
+
 // Reading glasses that sit over his eyes (frames wide enough for his eyes to look around inside them)
 function readingGlasses() {
   const frame = (x) => `<rect x="${x}" y="8" width="22" height="17" fill="#BFE3FF" fill-opacity=".25" stroke="${INK}" stroke-width="2.6"/>`
@@ -1933,6 +2294,24 @@ const LOOKS = {
   yoyo,
   juggle,
   stretch,
+  phone,
+  coffee,
+  game,
+  gum,
+  music,
+  readbook,
+  startled,
+  blush,
+  nervous,
+  flinch,
+  camera,
+  tapfoot,
+  yawn,
+  unbox,
+  magnify,
+  mail,
+  risky,
+  listen,
   // One-shot routines have no idle and running pair
   bedtime,
   compact,
@@ -1941,7 +2320,7 @@ const LOOKS = {
 
 export const VECTOR_STATES = Object.keys(LOOKS)
 // The reactions to Claude Code's events: each has one version (no running one); the one-off ones play once and hold
-export const REACTIONS = ['permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch']
+export const REACTIONS = ['permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen']
 
 // extra.percent: how full the limit is, for the clock and the calendar
 export function figureFor(state, gait, extra = {}) {

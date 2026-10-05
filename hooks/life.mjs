@@ -30,6 +30,24 @@ export const EVENT_MS = {
   yoyo: 3_600,
   juggle: 4_000,
   stretch: 3_200,
+  phone: 4_500,
+  coffee: 4_500,
+  game: 4_500,
+  gum: 4_200,
+  music: 4_500,
+  readbook: 5_000,
+  startled: 1_800,
+  blush: 2_600,
+  nervous: 2_600,
+  flinch: 1_800,
+  camera: 2_600,
+  tapfoot: 3_200,
+  yawn: 3_200,
+  unbox: 3_400,
+  magnify: 2_800,
+  mail: 3_000,
+  risky: 2_800,
+  listen: 3_200,
   pop: 2_600,
   oops: 2_800,
   glitch: 4_000,
@@ -129,7 +147,8 @@ export const SINGLE_LOOKS = new Set(['gym', 'flag', 'bedtime', 'compact', 'limit
 
 export const STATES = ['calm', 'tired', 'strained', 'critical', 'think', 'edit', 'shell', 'look', 'done', 'task', 'compact', 'asleep', 'bedtime', 'gym', 'flag', 'clock', 'calendar', 'limit',
   'permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow',
-  'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch']
+  'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch',
+  'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen']
 
 // ctx: { mood, turnRunning, asleep, sleepAgeMs, tool, toolAgeMs, doneAgeMs, wakeAgeMs, gymAgeMs, flagAgeMs, alertAgeMs,
 //        alertState, limit, waiting, events }

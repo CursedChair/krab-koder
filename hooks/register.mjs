@@ -9,7 +9,7 @@ import { OUTFIT_IDS } from './outfits.mjs'
 import { airUrl, geocodeUrl, KP_URL, parseAir, parseKp, parsePlace, parseWeather, scenesWithWeather, TRIAL, weatherOutfit, weatherUrl } from './weather.mjs'
 import { PERSONAL } from './personal.mjs'
 import { DAY_COMMANDS, DAY_NAMES, monthDayWords, parseCoordinates, parseMonthDay, parseRegions } from './settings.mjs'
-import { commandReaction, FIDGETS, isTestCommand, MILESTONES } from './work.mjs'
+import { attachmentReaction, commandReaction, FIDGETS, isLateNight, isTestCommand, LONG_TURN_MS, MILESTONES, messageReaction, startReaction } from './work.mjs'
 import { outfitFor, REGION_CODES, scenesWithLife, scenesWithSky, scenesWithTime, seasonFor, skyEvents } from './seasons.mjs'
 import { SEASON_SCENES } from './scenery.mjs'
 import { OUTFITS } from './outfits.mjs'
@@ -25,6 +25,9 @@ const FIDGET_AFTER_MS = 25_000
 // Searches in a row get the laptop once
 const SEARCH_EVERY_MS = 10_000
 const SEARCH_TOOLS = new Set(['WebSearch', 'WebFetch'])
+const CODE_SEARCH_TOOLS = new Set(['Grep', 'Glob'])
+// Only messages you sent yourself (typed, or from your phone) get a reaction to their words
+const YOUR_MESSAGES = new Set(['composer', 'bridge'])
 // Each open session leaves an "I'm here" mark in the shared store this often; marks older than STALE_MS are sessions that closed
 const HEARTBEAT_MS = 30_000
 const STALE_MS = 95_000
@@ -204,6 +207,11 @@ export function register(on) {
   // The quiet spell he last fidgeted in (by when it began), and when he last opened the laptop for a search
   let fidgetFor = 0
   let lastSearchAt = 0
+  let lastCodeSearchAt = 0
+  // When this reply started, whether he has tapped his foot at it yet, and the night he last yawned at
+  let turnStartAt = 0
+  let hasTappedThisTurn = false
+  let yawnedFor = ''
   // Helper agents working right now, and when the last one finished (it waves goodbye)
   let helpers = []
   let helperLeftAt = 0
@@ -501,6 +509,11 @@ export function register(on) {
         lastFive = { ...lastFive, celebratedFor: ended }
         await saveFive($, lastFive)
       }
+      // Claude has been at this reply a long while: he checks his watch and taps his foot, once a reply
+      if (isTurnRunning && !waiting && !hasTappedThisTurn && Date.now() - turnStartAt > LONG_TURN_MS) {
+        hasTappedThisTurn = true
+        eventAt = { ...eventAt, tapfoot: Date.now() }
+      }
       // A while into a quiet spell, before he dozes off, he fidgets once: a yo-yo, juggling or a stretch
       const quietMs = Date.now() - lastActivityAt
       if (!isTurnRunning && !waiting && runningTasks === 0 && quietMs > FIDGET_AFTER_MS && quietMs < SLEEP_AFTER_MS && fidgetFor !== lastActivityAt) {
@@ -730,8 +743,17 @@ export function register(on) {
 
   on('prompt.submit', async ($, e, next) => {
     touch()
-    // Every 100th, 500th, 1,000th... message gets a trophy
+    // Every 100th, 500th, 1,000th... message gets a trophy; otherwise what you sent, how and when can earn a reaction
+    const isYours = !e.origin || YOUR_MESSAGES.has(e.origin.kind)
+    const now = new Date(Date.now())
+    const night = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`
     if (MILESTONES.has(await countMessage($))) play('trophy')
+    else if (isYours) {
+      const reaction = attachmentReaction(e.attachments) ?? (e.origin?.kind === 'bridge' ? 'listen' : null) ?? messageReaction(e.text) ??
+        (isLateNight(now.getHours()) && yawnedFor !== night ? 'yawn' : null)
+      if (reaction === 'yawn') yawnedFor = night
+      if (reaction) play(reaction)
+    }
     // Anything still marked as waiting on you is over once you send a prompt
     waiting = null
     return next(e)
@@ -739,6 +761,8 @@ export function register(on) {
 
   on('turn.start', async ($, e, next) => {
     touch()
+    turnStartAt = Date.now()
+    hasTappedThisTurn = false
     isTurnRunning = true
     lastTool = null
     return next(e)
@@ -749,6 +773,8 @@ export function register(on) {
     waiting = null
     doneAt = Date.now()
     touch()
+    // You stopped Claude mid-reply: he jumps
+    if (e.reason === 'aborted') play('startled')
     return next(e)
   })
 
@@ -768,6 +794,13 @@ export function register(on) {
     if (SEARCH_TOOLS.has(e.tool) && Date.now() - lastSearchAt > SEARCH_EVERY_MS) {
       lastSearchAt = Date.now()
       play('browse')
+      $.ui.invalidate('ui.render')
+    }
+    // Searching the code, or a command worth being nervous about, gets its reaction as it starts
+    const atStart = CODE_SEARCH_TOOLS.has(e.tool) ? 'magnify' : e.tool === 'Bash' ? startReaction(e.input?.command) : null
+    if (atStart === 'risky' || (atStart === 'magnify' && Date.now() - lastCodeSearchAt > SEARCH_EVERY_MS)) {
+      if (atStart === 'magnify') lastCodeSearchAt = Date.now()
+      play(atStart)
       $.ui.invalidate('ui.render')
     }
     let result

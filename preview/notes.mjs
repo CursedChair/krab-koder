@@ -18,7 +18,7 @@ export const PRIORITY = [
   { name: 'Waking up', looks: ['wake'], patch: { wakeAgeMs: 100 }, note: `${seconds(WAKE_MS)} after anything wakes him.` },
   { name: 'A plan limit has run out', looks: ['limit'], patch: { limit: { state: 'clock', percent: LIMIT_REACHED_AT } }, note: `At ${LIMIT_REACHED_AT}% of your five-hour or weekly limit. He is out cold with X eyes until it resets. Only sleeping and compacting beat it.` },
   { name: 'Claude is waiting on your answer', looks: ['permission', 'asking'], patch: { waiting: 'permission' }, note: 'A permission dialog or Claude\'s questions are up. It shows until you answer, because nothing moves until you do.' },
-  { name: 'An event: flag, gym, a limit alert, or a reaction', looks: ['flag', 'gym', 'clock', 'calendar', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch'], patch: { gymAgeMs: 100 }, note: 'If two play at once, the newer one wins. They even interrupt Claude\'s work.' },
+  { name: 'An event: flag, gym, a limit alert, or a reaction', looks: ['flag', 'gym', 'clock', 'calendar', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen'], patch: { gymAgeMs: 100 }, note: 'If two play at once, the newer one wins. They even interrupt Claude\'s work.' },
   { name: 'Context window nearly full', looks: ['critical'], patch: { mood: 'critical' }, note: `${CRITICAL_AT}% or more. The one exception: a plan limit at ${URGENT_AT}% or more outranks it, because you can free up context but not your week.` },
   { name: 'Claude is working', looks: ['think', 'edit', 'shell', 'look'], patch: { turnRunning: true }, note: 'Thinking, writing, running a command, or reading.' },
   { name: 'Reply ready', looks: ['done'], patch: { doneAgeMs: 100 }, note: `${seconds(WAVE_MS)} after Claude finishes.` },
@@ -263,6 +263,96 @@ export const NOTES = {
     starts: 'Now and then in a quiet spell: 25 seconds after the last thing happened, before he dozes off (a yo-yo, juggling or a stretch, picked at random).',
     lasts: `${seconds(EVENT_MS.stretch)}, once per quiet spell. He reaches his arms high, stands up tall with his eyes shut, then relaxes.`,
     then: 'Back to calm, and then to sleep if it stays quiet.',
+  },
+  phone: {
+    starts: 'Now and then in a quiet spell: 25 seconds after the last thing happened, before he dozes off (one of nine little things, picked at random).',
+    lasts: `${seconds(EVENT_MS.phone)}, once. He scrolls his phone (its screen toward him), thumb flicking, its glow on his face, and laughs at something.`,
+    then: 'Back to calm, and then to sleep if it stays quiet.',
+  },
+  coffee: {
+    starts: 'Now and then in a quiet spell: 25 seconds after the last thing happened, before he dozes off (one of nine little things, picked at random).',
+    lasts: `${seconds(EVENT_MS.coffee)}, once. He brings up a steaming mug, sips with his eyes shut, and lets out a happy sigh.`,
+    then: 'Back to calm, and then to sleep if it stays quiet.',
+  },
+  game: {
+    starts: 'Now and then in a quiet spell: 25 seconds after the last thing happened, before he dozes off (one of nine little things, picked at random).',
+    lasts: `${seconds(EVENT_MS.game)}, once. He hunches over a handheld game, mashing buttons, and a star pops up when he wins.`,
+    then: 'Back to calm, and then to sleep if it stays quiet.',
+  },
+  gum: {
+    starts: 'Now and then in a quiet spell: 25 seconds after the last thing happened, before he dozes off (one of nine little things, picked at random).',
+    lasts: `${seconds(EVENT_MS.gum)}, once. He blows a pink bubble that grows until it pops all over his face, then wipes it off.`,
+    then: 'Back to calm, and then to sleep if it stays quiet.',
+  },
+  music: {
+    starts: 'Now and then in a quiet spell: 25 seconds after the last thing happened, before he dozes off (one of nine little things, picked at random).',
+    lasts: `${seconds(EVENT_MS.music)}, once. Headphones on, eyes shut, he bops to the beat with notes floating up.`,
+    then: 'Back to calm, and then to sleep if it stays quiet.',
+  },
+  readbook: {
+    starts: 'Now and then in a quiet spell: 25 seconds after the last thing happened, before he dozes off (one of nine little things, picked at random).',
+    lasts: `${seconds(EVENT_MS.readbook)}, once. He puts on his reading glasses, holds up a book (the cover toward you), reads, and turns a page.`,
+    then: 'Back to calm, and then to sleep if it stays quiet.',
+  },
+  startled: {
+    starts: 'You stop Claude mid-reply (Esc).',
+    lasts: `${seconds(EVENT_MS.startled)}, once. He jumps, startled, hands up, with a "!" over his head.`,
+    then: 'Back to whatever applies, usually calm.',
+  },
+  blush: {
+    starts: 'You thank Claude or say something nice (thanks, good job, perfect, love it).',
+    lasts: `${seconds(EVENT_MS.blush)}, once. He blushes, a heart floats up, and he sways shyly.`,
+    then: 'Back to Claude working on your message.',
+  },
+  nervous: {
+    starts: 'You sound frustrated (wtf, ugh, bro, still broken, why is..., !!!).',
+    lasts: `${seconds(EVENT_MS.nervous)}, once. He sweats, his eyes dart about, and he fidgets with his hands.`,
+    then: 'Back to Claude working on your message.',
+  },
+  flinch: {
+    starts: 'You write a message mostly in CAPITALS.',
+    lasts: `${seconds(EVENT_MS.flinch)}, once. He flinches, squashed down with his eyes squeezed shut, shock lines around his head.`,
+    then: 'Back to Claude working on your message.',
+  },
+  camera: {
+    starts: 'You paste a picture or attach a file.',
+    lasts: `${seconds(EVENT_MS.camera)}, once. He holds up a camera, the flash goes off, and a photo slides out.`,
+    then: 'Back to Claude working on your message.',
+  },
+  tapfoot: {
+    starts: 'Claude has been working on one reply for over 2 minutes (once a reply).',
+    lasts: `${seconds(EVENT_MS.tapfoot)}, once. He checks his watch and taps his foot.`,
+    then: 'Back to Claude working.',
+  },
+  yawn: {
+    starts: 'You send a message between 1 and 5 in the morning (once a night).',
+    lasts: `${seconds(EVENT_MS.yawn)}, once. A huge yawn behind his hand, eyes shut, and a little tear.`,
+    then: 'Back to Claude working on your message.',
+  },
+  unbox: {
+    starts: 'Claude installs packages (npm install, pip install, brew install, cargo add and the like).',
+    lasts: `${seconds(EVENT_MS.unbox)}, once. A delivery box drops from the sky, he opens the flaps, and the packages pop out.`,
+    then: 'Back to Claude working.',
+  },
+  magnify: {
+    starts: 'Claude searches the code (its search tools, or grep, rg or find), at most every 10 seconds.',
+    lasts: `${seconds(EVENT_MS.magnify)}, once. He peers through a big magnifying glass, his eye huge behind the lens.`,
+    then: 'Back to Claude working.',
+  },
+  mail: {
+    starts: 'Claude opens a pull request (gh pr create).',
+    lasts: `${seconds(EVENT_MS.mail)}, once. He folds an envelope shut, a seal stamps it, and it flies off.`,
+    then: 'Back to Claude working.',
+  },
+  risky: {
+    starts: 'Claude starts a risky command (rm -rf, a force push, sudo, git reset --hard).',
+    lasts: `${seconds(EVENT_MS.risky)}, once. He hides behind his hands, peeking through, sweating.`,
+    then: 'Back to Claude working.',
+  },
+  listen: {
+    starts: 'You send a message from your phone (Remote Control), or attach an audio clip.',
+    lasts: `${seconds(EVENT_MS.listen)}, once. A comically huge ear grows out of his head and he cups a hand to it to listen in.`,
+    then: 'Back to Claude working on your message.',
   },
   present: {
     starts: 'Claude sends you a file (like a report or a picture) or publishes a page for you.',

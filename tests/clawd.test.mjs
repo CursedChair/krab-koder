@@ -35,7 +35,7 @@ const STATE_CTX = {
   limit: { limit: { state: 'clock', percent: 100 } },
   permission: { waiting: 'permission', turnRunning: true },
   asking: { waiting: 'asking', turnRunning: true },
-  ...Object.fromEntries(['shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch'].map((name) => [name, { turnRunning: true, events: { [name]: 100 } }])),
+  ...Object.fromEntries(['shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen'].map((name) => [name, { turnRunning: true, events: { [name]: 100 } }])),
 }
 
 function run(life, ctx, ticks) {
@@ -106,7 +106,7 @@ test('stateFor picks the look that matches what is happening', () => {
     assert.equal(stateFor({ ...poseCtx, ...patch }), state, state)
   }
   assert.equal(stateFor({ ...poseCtx, wakeAgeMs: 300 }), 'wake')
-  assert.equal(STATES.length, 50)
+  assert.equal(STATES.length, 68)
   assert.deepEqual([...STATES].sort(), Object.keys(STATE_CTX).sort())
 })
 

@@ -1,6 +1,7 @@
 // Runs the real mod against a pretend Claude Code. Run with: node --test tests/register.test.mjs
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
+import { FIDGETS } from '../hooks/work.mjs'
 import { register } from '../hooks/register.mjs'
 
 const HOUR = 60 * 60 * 1000
@@ -805,7 +806,7 @@ test('in a quiet spell he fidgets once before dozing off', async () => {
   assert.equal(await lookName(h), 'calm')
   h.advance(20_000)
   await h.tick()
-  assert.ok(['yoyo', 'juggle', 'stretch'].includes(await lookName(h)), 'a fidget')
+  assert.ok(FIDGETS.includes(await lookName(h)), 'a fidget')
   h.advance(6_000)
   await h.tick()
   assert.equal(await lookName(h), 'calm', 'only once per quiet spell')
@@ -826,4 +827,47 @@ test('a brand-new install says hello once and points to the setup commands; sett
   const text = (await h.fire('command.run', { command: 'krab', args: 'settings' })).text
   assert.match(text, /\/krab location <city>/)
   assert.match(text, /\/krab birthday/)
+})
+
+test('reactions to you: Esc makes him jump, thanks makes him blush, a pasted picture gets the camera, your phone gets the giant ear', async () => {
+  const h = harness()
+  await h.start()
+  await h.fire('turn.start', {})
+  await h.fire('turn.complete', { reason: 'aborted' })
+  assert.equal(await lookName(h), 'startled')
+  h.advance(5_000)
+  await h.fire('prompt.submit', { text: 'thanks, perfect', origin: { kind: 'composer' } })
+  assert.equal(await lookName(h), 'blush')
+  h.advance(5_000)
+  await h.fire('prompt.submit', { text: 'look at this', attachments: [{ type: 'image' }], origin: { kind: 'composer' } })
+  assert.equal(await lookName(h), 'camera')
+  h.advance(5_000)
+  await h.fire('prompt.submit', { text: 'on my way home, keep going', origin: { kind: 'bridge' } })
+  assert.equal(await lookName(h), 'listen')
+  h.advance(5_000)
+  await h.fire('prompt.submit', { text: 'WHY DOES THIS KEEP FAILING', origin: { kind: 'composer' } })
+  assert.equal(await lookName(h), 'flinch')
+  h.advance(5_000)
+  await h.fire('prompt.submit', { text: 'thanks', origin: { kind: 'peer' } })
+  assert.notEqual(await lookName(h), 'blush', "another session's message is not yours")
+})
+
+test('reactions to the work: a risky command, a code search, installing packages, a pull request, and a long wait', async () => {
+  const h = harness()
+  await h.start()
+  await h.fire('turn.start', {})
+  await h.fire('tool.call', { tool: 'Bash', input: { command: 'rm -rf build' } }, () => ({ result: { stdout: '', stderr: '' } }))
+  assert.equal(await lookName(h), 'risky')
+  h.advance(5_000)
+  await h.fire('tool.call', { tool: 'Grep', input: { pattern: 'x' } }, () => ({ result: {} }))
+  assert.equal(await lookName(h), 'magnify')
+  h.advance(5_000)
+  await h.fire('tool.call', { tool: 'Bash', input: { command: 'npm install react' } }, () => ({ result: { stdout: '', stderr: '' } }))
+  assert.equal(await lookName(h), 'unbox')
+  h.advance(5_000)
+  await h.fire('tool.call', { tool: 'Bash', input: { command: 'gh pr create --fill' } }, () => ({ result: { stdout: '', stderr: '' } }))
+  assert.equal(await lookName(h), 'mail')
+  h.advance(125_000)
+  await h.tick()
+  assert.equal(await lookName(h), 'tapfoot')
 })
