@@ -1638,9 +1638,8 @@ function mog() {
   const HIGHLIGHT = '#F2A88E'
   const cheeks = [0, 1, 2, 3].map((k) => rect(13 + k * 4, 25.5 + k * 3, 5.5, 2.4, HIGHLIGHT) + rect(88.5 - k * 4, 25.5 + k * 3, 5.5, 2.4, HIGHLIGHT)).join('') +
     [0, 1, 2].map((k) => shade(17 + k * 4, 35 + k * 3, 5, 3, '.3') + shade(85 - k * 4, 35 + k * 3, 5, 3, '.3')).join('')
-  // The nose: a shadow down one side of the bridge, a lighter tip and a shadow under it
-  const nose = shade(55.5, 15, 2.2, 15, '.55') + rect(51.5, 16, 2, 13, HIGHLIGHT, 'fill-opacity=".7"') +
-    rect(48, 29, 12, 5, HIGHLIGHT) + shade(48, 34, 12, 2, '.55')
+  // The nose: a shadow down one side of the bridge and a highlight down the other
+  const nose = shade(55.5, 15, 2.2, 15, '.55') + rect(51.5, 16, 2, 13, HIGHLIGHT, 'fill-opacity=".7"')
   const brows = rect(16, 6, 7, 3, INK) + rect(22, 7.2, 7, 3, INK) + rect(28, 8.6, 7, 3, INK) +          // furrowed, sloping down toward the middle
     rect(72, 2.6, 6, 3, INK) + rect(77, 1, 7, 3, INK) + rect(83, 2.2, 6, 3, INK)                         // arched up
   const jaw = Array.from({ length: 7 }, (_, k) => rect(12 + k * 4.2, 45 + k * 3, 5.5, 3, DARK) + rect(89.5 - k * 4.2, 45 + k * 3, 5.5, 3, DARK)).join('') +
