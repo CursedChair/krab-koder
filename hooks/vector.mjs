@@ -144,7 +144,8 @@ function hand(side, o = {}) {
   const x = side === 'left' ? 0 : 85
   const stroke = o.hold ? ` stroke="${DARK}" stroke-width="1.6"` : ''
   // An outfit with sleeves puts them over the inner part of the hand, inside the hand's own group so they move with it
-  return wrap((o.attach ?? '') + rect(x, 21, 22, 23, SKIN, stroke.trim()) + (activeOutfit?.sleeve?.(side) ?? '') + (o.carry ?? ''), o.at ?? '', ...(o.anims ?? []))
+  const block = o.shape ?? rect(x, 21, 22, 23, SKIN, stroke.trim()) + (activeOutfit?.sleeve?.(side) ?? '')
+  return wrap((o.attach ?? '') + block + (o.carry ?? ''), o.at ?? '', ...(o.anims ?? []))
 }
 
 // The whole figure. o: { legs, eyes, left, right, worn, held, upperAt, upper: [anims], props }
@@ -1467,15 +1468,14 @@ function tapfoot() {
   })
 }
 
-// Coding late at night: a huge yawn behind his hand, eyes shut, and a little tear
+// Coding late at night: a big yawn behind his hand, eyes shut, stretching up, and a little tear
 function yawn() {
   const D = EVENT_SECONDS.yawn
-  const mouth = wrap(wrap(rect(-7, -8, 14, 16, '#5A2420') + rect(-4, 3, 8, 4, '#E5584B'), '', anim('scale', D, [[0, '0 0'], [0.3, '0 0'], [1.0, '1 1', 'p2out'], [2.0, '1 1'], [2.4, '0 0', 'p2in'], [D, '0 0']], ONCE)), 'translate(54 31)')
   const tear = wrap(rect(0, 0, 2.5, 3.5, SWEAT), 'translate(86 22)', anim('translate', D, [[0, '0 0'], [2.0, '0 0'], [2.8, '0 8', 'p2in'], [D, '0 8']], ONCE), anim('opacity', D, [[0, '0'], [2.0, '0'], [2.05, '1', 'lin'], [2.8, '1'], [2.9, '0', 'lin'], [D, '0']], ONCE))
   return figure({
     ownProps: true,
-    heldRaw: mouth + tear,
-    right: { hold: true, over: true, anims: [holdAt(D, -40, 2, 1.1, 2.0)] },
+    heldRaw: tear,
+    right: { hold: true, over: true, anims: [holdAt(D, -40, 2, 0.6, 2.0)] },
     upper: [anim('translate', D, [[0, '0 0'], [0.9, '0 -3', 'sio'], [2.1, '0 -3'], [2.6, '0 0', 'sio'], [D, '0 0']], ONCE)],
     eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [0.4, '1 .1', 'p2io'], [2.3, '1 .1'], [2.7, '1 .5', 'p2io'], [D, '1 .5']], ONCE)] },
   })
@@ -1550,38 +1550,56 @@ function risky() {
   })
 }
 
-// A message from your phone, or an audio clip: a comically huge ear sprouts from his head and he cups a hand behind it to listen in
+// A message from your phone, or an audio clip: a comically huge ear grows out of the side of his head,
+// and he holds a flat hand up behind it to listen in, one brow raised and the other eye squinting
+const EAR_ROWS = [
+  '...OOOOOO...',
+  '..OSSSSSSO..',
+  '.OSSSSSSSSO.',
+  '.OSPPPPPSSSO',
+  'SSPPSSSPPSSO',
+  'SSPSSSSSPSSO',
+  'SSPSSOOSPSSO',
+  'SSPSODDSPSSO',
+  'SSPSODDSPSSO',
+  'SSPSSOOSPSSO',
+  'SSPPSSSPPSSO',
+  '.OSPPPPPSSO.',
+  '.OSSSSSSSSO.',
+  '..OSSSSSSSO.',
+  '..OSSSSSSO..',
+  '...OSSSSO...',
+  '....OSSO....',
+  '.....OO.....',
+]
 function listen() {
   const D = EVENT_SECONDS.listen
-  const EAR = '#E8957A'
-  const shape = (inset, fill) => [[8, 0, 22, 6], [3, 6, 33, 8], [0, 14, 38, 30], [3, 44, 33, 10], [8, 54, 24, 6], [13, 60, 14, 4]]
-    .map(([x, y, w, h]) => rect(x + inset, y + inset, Math.max(0, w - inset * 2), Math.max(0, h - (y === 0 || y === 60 ? inset : 0)), fill)).join('')
-  const join = rect(-10, 12, 14, 34, SKIN)
-  const ear = shape(0, DARK) + shape(2, SKIN) + join + rect(10, 8, 20, 6, EAR) + rect(24, 14, 8, 26, EAR) + rect(8, 38, 20, 8, EAR) + rect(14, 20, 10, 16, '#C4553D') + rect(6, 16, 3, 22, '#FFE6D2', 'fill-opacity=".6"')
+  const CELL = 4
+  const colours = { O: DARK, S: SKIN, P: '#E8957A', D: '#7A2E22' }
+  const ear = Object.entries(colours).map(([key, fill]) => pixels(EAR_ROWS.map((row) => row.replace(new RegExp(`[^${key}]`, 'g'), '.').replaceAll(key, 'X')), 0, 0, CELL, fill)).join('') +
+    rect(-10, 16, 12, 28, SKIN) + rect(12, 8, 4, 8, '#FFE6D2', 'fill-opacity=".6"')
+  // It grows from where it joins his head
   const grow = anim('scale', D, [[0, '0 0'], [0.2, '0 0'], [0.6, '1.15 1.15', 'back'], [0.75, '1 1', 'p2io'], [2.6, '1 1'], [2.9, '0 0', 'p2in'], [D, '0 0']], ONCE)
-  const wiggle = anim('rotate', 0.9, [[0, '0 0 0'], [0.45, '4 0 0', 'sio'], [0.9, '0 0 0', 'sio']])
-  const sproutAt = wrap(wrap(wrap(ear, 'translate(0 -32)'), '', wiggle), 'translate(92 26)', grow)
+  const sprout = wrap(wrap(ear, 'translate(0 -36)'), 'translate(94 26)', grow)
+  // A flat hand held up just behind the ear: fingers together and pointing up, the lines between them, a thumb toward the ear
+  const line = `stroke="${DARK}" stroke-width="1.6"`
+  const HX = 136
+  const HY = -16
+  const flatHand = rect(HX - 5, HY + 30, 8, 11, SKIN, line) +
+    [[0, 4], [5.5, 0], [11, 2], [16.5, 8]].map(([dx, dy]) => rect(HX + dx, HY + dy, 5.5, 34 - dy, SKIN, line)).join('') +
+    rect(HX, HY + 26, 22, 24, SKIN, line) + rect(HX + 1, HY + 22, 20, 8, SKIN) + rect(HX + 4, HY + 48, 15, 10, SKIN, line) +
+    rect(HX + 17, HY + 10, 3, 38, '#C96A50', 'fill-opacity=".6"')
+  const raise = anim('translate', D, [[0, '-51 37'], [0.5, '0 0', 'p2out'], [2.7, '0 0'], [D, '-51 37', 'p2io']], ONCE)
   const waves = [0, 0.27, 0.54].map((begin) => wrap(rect(0, 0, 3, 6, '#8FC7F2') + rect(3, 6, 3, 16, '#8FC7F2') + rect(0, 22, 3, 6, '#8FC7F2'), '',
-    anim('translate', 0.8, [[0, '170 0'], [0.8, '140 4']], { begin }), anim('opacity', 0.8, [[0, '0'], [0.2, '1', 'lin'], [0.8, '0', 'lin']], { begin }))).join('')
-  const SHADE = '#C96A50'
-  const line = `stroke="${DARK}" stroke-width="1.2"`
-  const finger = (x, h, deg) => wrap(
-    rect(x, 21 - h, 5, h + 3, SKIN, line) + rect(x + 0.8, 19.5 - h, 3.4, 2, SKIN) + rect(x + 3.6, 22 - h, 1.2, h - 1, SHADE, 'fill-opacity=".7"') +
-      rect(x + 1, 21 - h * 0.45, 3, 0.9, DARK, 'fill-opacity=".55"') + rect(x + 1, 21 - h * 0.8, 3, 0.7, DARK, 'fill-opacity=".35"'),
-    `rotate(${deg} ${x + 2.5} 22)`)
-  const thumb = wrap(rect(0, 0, 6, 13, SKIN, line) + rect(0.8, -1.5, 4.4, 2, SKIN) + rect(4.4, 1, 1.2, 10, SHADE, 'fill-opacity=".7"'), 'translate(82 34) rotate(-38)')
-  const palm = rect(88, 29, 13, 0.9, DARK, 'fill-opacity=".45"') + rect(89, 34, 10, 0.9, DARK, 'fill-opacity=".45"') + rect(94, 27, 0.9, 12, DARK, 'fill-opacity=".3"') + rect(104, 22, 3, 21, SHADE, 'fill-opacity=".5"')
-  const cupped = thumb + finger(85.5, 15, -9) + finger(91, 18, -3) + finger(96.5, 17, 3) + finger(102, 12, 10) + palm
+    anim('translate', 0.8, [[0, '196 0'], [0.8, '168 4']], { begin }), anim('opacity', 0.8, [[0, '0'], [0.2, '1', 'lin'], [0.8, '0', 'lin']], { begin }))).join('')
+  // The look from the photos, without a mouth: one brow raised, the other eye squinting
+  const face = rect(19, 4, 15, 3, INK) + rect(31, 2, 4, 3, INK) + rect(72, 9, 18, 3, INK) + rect(75, 12, 13, 5, SKIN)
   return figure({
     ownProps: true,
-    heldRaw: sproutAt + between(waves, D, 0.6, 2.6),
-    // his hand raised and cupped against the lower half of the ear, palm out, fingers spread up it
-    right: { hold: true, over: true, carry: cupped, anims: [holdAt(D, 28, 10, 0.5, 2.7)] },
+    heldRaw: sprout + between(waves, D, 0.6, 2.6) + between(face, D, 0.45, 2.75),
+    right: { shape: flatHand, carry: '', anims: [raise] },
     upper: [anim('translate', D, [[0, '0 0'], [0.5, '-3 1', 'p2io'], [2.6, '-3 1'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)],
-    eyes: {
-      gaze: [anim('translate', D, [[0, '0 0'], [0.5, '-5 0', 'p2io'], [2.6, '-5 0'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)],
-      scaleAnims: [anim('scale', D, [[0, '1 1'], [0.5, '1.15 1.15', 'p2io'], [2.6, '1.15 1.15'], [2.9, '1 1', 'p2io'], [D, '1 1']], ONCE)],
-    },
+    eyes: { gaze: [anim('translate', D, [[0, '0 0'], [0.5, '-2 1', 'p2io'], [2.6, '-2 1'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)] },
   })
 }
 
