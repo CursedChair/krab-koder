@@ -1552,44 +1552,48 @@ function risky() {
 
 // A message from your phone, or an audio clip: a comically huge ear grows out of the side of his head,
 // and he holds a flat hand up behind it to listen in, one brow raised and the other eye squinting
+// An ear seen from the side: the rim curling over the top and down the back, the groove inside it, the bowl with the
+// ear hole at its front edge (toward his face), and the lobe at the bottom
 const EAR_ROWS = [
-  '...OOOOOO...',
-  '..OSSSSSSO..',
-  '.OSSSSSSSSO.',
-  '.OSPPPPPSSSO',
-  'SSPPSSSPPSSO',
-  'SSPSSSSSPSSO',
-  'SSPSSOOSPSSO',
-  'SSPSODDSPSSO',
-  'SSPSODDSPSSO',
-  'SSPSSOOSPSSO',
-  'SSPPSSSPPSSO',
-  '.OSPPPPPSSO.',
-  '.OSSSSSSSSO.',
-  '..OSSSSSSSO.',
-  '..OSSSSSSO..',
-  '...OSSSSO...',
-  '....OSSO....',
-  '.....OO.....',
+  '.....OOOOO....',
+  '...OOSSRRSOO..',
+  '..OSSRRRRSSSO.',
+  '.OSSHHHHHHSSSO',
+  '.OSHHSSSSHHSSO',
+  'OSHHSSSSSSHHSO',
+  'SSHSSKKKSSSHSO',
+  'SSHSKKKKKSSHSO',
+  'SSSSKKKKKKSHSO',
+  'SDDKKKKKKSSHSO',
+  'SDDKKKKKSSHHSO',
+  'SSSSKKKSSHHSO.',
+  'SSSSSSSSHHSO..',
+  '.OSSSSSHHSSO..',
+  '..OSSSHHSSSO..',
+  '..OSSSSSSSO...',
+  '...OSSSSSSO...',
+  '...OSSSSSO....',
+  '....OSSSO.....',
+  '.....OOO......',
 ]
 function listen() {
   const D = EVENT_SECONDS.listen
-  const CELL = 4
-  const colours = { O: DARK, S: SKIN, P: '#E8957A', D: '#7A2E22' }
+  const CELL = 3.5
+  const colours = { O: '#A03C28', S: SKIN, R: '#F2A88E', H: '#A9452F', K: '#8E3524', D: '#4A1A12' }
   const ear = Object.entries(colours).map(([key, fill]) => pixels(EAR_ROWS.map((row) => row.replace(new RegExp(`[^${key}]`, 'g'), '.').replaceAll(key, 'X')), 0, 0, CELL, fill)).join('') +
-    rect(-10, 16, 12, 28, SKIN) + rect(12, 8, 4, 8, '#FFE6D2', 'fill-opacity=".6"')
+    rect(-10, 20, 12, 26, SKIN)
   // It grows from where it joins his head
   const grow = anim('scale', D, [[0, '0 0'], [0.2, '0 0'], [0.6, '1.15 1.15', 'back'], [0.75, '1 1', 'p2io'], [2.6, '1 1'], [2.9, '0 0', 'p2in'], [D, '0 0']], ONCE)
-  const sprout = wrap(wrap(ear, 'translate(0 -36)'), 'translate(94 26)', grow)
+  const sprout = wrap(wrap(ear, 'translate(0 -35)'), 'translate(94 26)', grow)
   // A flat hand held up just behind the ear: fingers together and pointing up, the lines between them, a thumb toward the ear
   const line = `stroke="${DARK}" stroke-width="1.6"`
-  const HX = 136
-  const HY = -16
+  const HX = 137
+  const HY = -14
   const flatHand = rect(HX - 5, HY + 30, 8, 11, SKIN, line) +
     [[0, 4], [5.5, 0], [11, 2], [16.5, 8]].map(([dx, dy]) => rect(HX + dx, HY + dy, 5.5, 34 - dy, SKIN, line)).join('') +
     rect(HX, HY + 26, 22, 24, SKIN, line) + rect(HX + 1, HY + 22, 20, 8, SKIN) + rect(HX + 4, HY + 48, 15, 10, SKIN, line) +
     rect(HX + 17, HY + 10, 3, 38, '#C96A50', 'fill-opacity=".6"')
-  const raise = anim('translate', D, [[0, '-51 37'], [0.5, '0 0', 'p2out'], [2.7, '0 0'], [D, '-51 37', 'p2io']], ONCE)
+  const raise = anim('translate', D, [[0, '-52 35'], [0.5, '0 0', 'p2out'], [2.7, '0 0'], [D, '-52 35', 'p2io']], ONCE)
   const waves = [0, 0.27, 0.54].map((begin) => wrap(rect(0, 0, 3, 6, '#8FC7F2') + rect(3, 6, 3, 16, '#8FC7F2') + rect(0, 22, 3, 6, '#8FC7F2'), '',
     anim('translate', 0.8, [[0, '196 0'], [0.8, '168 4']], { begin }), anim('opacity', 0.8, [[0, '0'], [0.2, '1', 'lin'], [0.8, '0', 'lin']], { begin }))).join('')
   // The look from the photos, without a mouth: one brow raised, the other eye squinting
