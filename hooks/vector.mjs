@@ -1634,6 +1634,13 @@ function mog() {
     Array.from({ length: 14 }, (_, k) => shade(16 + (k % 7) * 4.2 + (k >= 7 ? 1.5 : 0), 49 + (k % 7) * 3 + (k >= 7 ? 3 : 0), 1.8, 1.8, '.6') +
       shade(88 - (k % 7) * 4.2 - (k >= 7 ? 1.5 : 0), 49 + (k % 7) * 3 + (k >= 7 ? 3 : 0), 1.8, 1.8, '.6')).join('') +
     shade(53, 63, 1.8, 4.5, '.65')
+  // Sculpted cheekbones: a light highlight along the top of each, over the shadow beneath
+  const HIGHLIGHT = '#F2A88E'
+  const cheeks = [0, 1, 2, 3].map((k) => rect(13 + k * 4, 25.5 + k * 3, 5.5, 2.4, HIGHLIGHT) + rect(88.5 - k * 4, 25.5 + k * 3, 5.5, 2.4, HIGHLIGHT)).join('') +
+    [0, 1, 2].map((k) => shade(17 + k * 4, 35 + k * 3, 5, 3, '.3') + shade(85 - k * 4, 35 + k * 3, 5, 3, '.3')).join('')
+  // The nose: a shadow down one side of the bridge, a lighter tip, a shadow under it and two nostrils
+  const nose = shade(55.5, 15, 2.2, 15, '.55') + rect(51.5, 16, 2, 13, HIGHLIGHT, 'fill-opacity=".7"') +
+    rect(48, 29, 12, 5, HIGHLIGHT) + shade(48, 34, 12, 2, '.55') + shade(49, 32.5, 3, 2, '.8') + shade(56, 32.5, 3, 2, '.8')
   const brows = rect(16, 6, 7, 3, INK) + rect(22, 7.2, 7, 3, INK) + rect(28, 8.6, 7, 3, INK) +          // furrowed, sloping down toward the middle
     rect(72, 2.6, 6, 3, INK) + rect(77, 1, 7, 3, INK) + rect(83, 2.2, 6, 3, INK)                         // arched up
   const jaw = Array.from({ length: 7 }, (_, k) => rect(12 + k * 4.2, 45 + k * 3, 5.5, 3, DARK) + rect(89.5 - k * 4.2, 45 + k * 3, 5.5, 3, DARK)).join('') +
@@ -1643,7 +1650,7 @@ function mog() {
   const closer = anim('scale', D, [[0, '1 1'], [0.2, '1 1'], [1.4, '1.15 1.15', 'sio'], [D - 0.5, '1.15 1.15'], [D, '1 1', 'p2io']], ONCE)
   return wrap(wrap(figure({
     ownProps: true,
-    heldRaw: show(lids + brows + jaw + face) + glint,
+    heldRaw: show(lids + brows + jaw + face + cheeks + nose) + glint,
     upper: [
       anim('translate', D, [[0, '0 0'], [0.2, '0 0'], [1.4, '-6 -6', 'sio'], [1.9, '-9 -6', 'sio'], [2.5, '-3 -6', 'sio'], [2.9, '-6 -6', 'sio'], [D - 0.5, '-6 -6'], [D, '0 0', 'p2io']], ONCE),
       anim('scale', D, [[0, '1 1'], [0.2, '1 1'], [1.4, '1.1 1.1', 'sio'], [D - 0.5, '1.1 1.1'], [D, '1 1', 'p2io']], ONCE),
