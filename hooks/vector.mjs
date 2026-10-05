@@ -1246,17 +1246,18 @@ const SCREEN_LIGHT = '#9FD8FF'
 // Scrolling his phone (its screen toward him): thumb flicking, the screen's glow on his face, and a little laugh at something
 function phone() {
   const D = EVENT_SECONDS.phone
-  const PX = 60
-  const PY = 28
+  const PX = 58
+  const PY = 18
   // The back of the phone faces you (the screen faces him): a case, the camera, and his thumb flicking at the top edge
-  const device = rect(PX, PY, 16, 26, '#2B2D33') + rect(PX + 1.5, PY + 1.5, 13, 23, '#3F8CE8') + rect(PX + 3, PY + 3, 5, 5, '#2B2D33') + rect(PX + 4, PY + 4, 3, 3, '#6F7C8C') + rect(PX + 5.5, PY + 15, 5, 5, '#2E6FC0')
-  const thumb = wrap(rect(PX + 8, PY - 3, 6, 5, SKIN, `stroke="${DARK}" stroke-width="1"`), '', anim('translate', 0.9, [[0, '0 3'], [0.35, '0 -1', 'p2out'], [0.9, '0 3', 'p2io']]))
+  const device = rect(PX, PY, 20, 34, '#2B2D33') + rect(PX + 1.5, PY + 1.5, 17, 31, '#3F8CE8') + rect(PX + 3, PY + 3, 6, 6, '#2B2D33') + rect(PX + 4, PY + 4, 4, 4, '#6F7C8C') + rect(PX + 7.5, PY + 16, 5, 5, '#2E6FC0')
+  const thumb = wrap(rect(PX + 10, PY - 3, 6, 5, SKIN, `stroke="${DARK}" stroke-width="1"`), '', anim('translate', 0.9, [[0, '0 3'], [0.35, '0 -1', 'p2out'], [0.9, '0 3', 'p2io']]))
   const glow = rect(11, 20, 85, 16, SCREEN_LIGHT, 'fill-opacity=".14"') + rect(11, 10, 85, 10, SCREEN_LIGHT, 'fill-opacity=".07"')
   const laugh = anim('translate', D, [[0, '0 0'], [2.6, '0 0'], [2.75, '0 -2.5', 'p2out'], [2.9, '0 0', 'p2in'], [3.05, '0 -2.5', 'p2out'], [3.2, '0 0', 'p2in'], [D, '0 0']], ONCE)
   return figure({
     ownProps: true,
     heldRaw: between(glow + device + thumb, D, 0.3, D - 0.45),
-    right: { hold: true, anims: [holdAt(D, -24, 14)] },
+    // his hand in front of the phone's lower half, gripping it
+    right: { hold: true, over: true, anims: [holdAt(D, -26, 28)] },
     upper: [laugh],
     eyes: {
       gaze: [anim('translate', D, [[0, '0 0'], [0.4, '3 6', 'p2io'], [D - 0.4, '3 6'], [D, '0 0', 'p2io']], ONCE)],
