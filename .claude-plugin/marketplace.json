@@ -1,0 +1,16 @@
+{
+  "name": "krab-koder",
+  "owner": {
+    "name": "CursedChair"
+  },
+  "metadata": {
+    "description": "Krab Koder: a pixel-art crab mascot for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "krab-koder",
+      "source": "./",
+      "description": "A little pixel-art crab above the prompt who reacts to what Claude is doing and dresses for holidays, your days and your weather."
+    }
+  ]
+}
