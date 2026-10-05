@@ -1598,19 +1598,25 @@ function listen() {
   // The look from the photos, without a mouth: one brow raised, the other lowered
   const face = rect(19, 4, 15, 3, INK) + rect(31, 2, 4, 3, INK) + rect(73, 7, 15, 3, INK)
   // He leans in toward you from the side, ear first: bigger, tipped toward the ear, and a little narrower as he turns, then settles back
-  const leanIn = anim('scale', D, [[0, '1 1'], [0.3, '1 1'], [0.8, '1.12 1.22', 'p2out'], [2.6, '1.12 1.22'], [3.0, '1 1', 'p2io'], [D, '1 1']], ONCE)
-  const tilt = anim('rotate', D, [[0, '0'], [0.3, '0'], [0.8, '8', 'p2out'], [2.6, '8'], [3.0, '0', 'p2io'], [D, '0']], ONCE)
+  const leanIn = anim('scale', D, [[0, '1 1'], [0.3, '1 1'], [0.8, '1.1 1.1', 'p2out'], [2.6, '1.1 1.1'], [3.0, '1 1', 'p2io'], [D, '1 1']], ONCE)
+  // tipped like the photo: the ear side up and toward you, his face down toward the other side
+  const tilt = anim('rotate', D, [[0, '0'], [0.3, '0'], [0.8, '-8', 'p2out'], [2.6, '-8'], [3.0, '0', 'p2io'], [D, '0']], ONCE)
   return wrap(wrap(figure({
     ownProps: true,
     heldRaw: sprout + between(waves, D, 0.6, 2.6) + between(face, D, 0.45, 2.75),
     right: { shape: flatHand, carry: '', anims: [raise] },
     // His head comes closer than his feet: the top of him grows extra, around the middle of his head, for a wide-angle look
     upper: [
-      anim('translate', D, [[0, '0 0'], [0.3, '0 0'], [0.8, '-9 -5', 'p2out'], [2.6, '-9 -5'], [3.0, '0 0', 'p2io'], [D, '0 0']], ONCE),
-      anim('scale', D, [[0, '1 1'], [0.3, '1 1'], [0.8, '1.16 1.16', 'p2out'], [2.6, '1.16 1.16'], [3.0, '1 1', 'p2io'], [D, '1 1']], ONCE),
+      anim('translate', D, [[0, '0 0'], [0.3, '0 0'], [0.8, '-16 -13', 'p2out'], [2.6, '-16 -13'], [3.0, '0 0', 'p2io'], [D, '0 0']], ONCE),
+      anim('scale', D, [[0, '1 1'], [0.3, '1 1'], [0.8, '1.3 1.3', 'p2out'], [2.6, '1.3 1.3'], [3.0, '1 1', 'p2io'], [D, '1 1']], ONCE),
     ],
+    // his legs farther away, so smaller
+    legs: { perLeg: () => [anim('scale', D, [[0, '1 1'], [0.3, '1 1'], [0.8, '.85 .85', 'p2out'], [2.6, '.85 .85'], [3.0, '1 1', 'p2io'], [D, '1 1']], ONCE)] },
     // Looking straight out at you, eyes a little wider
-    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [0.4, '1.2 1.2', 'p2out'], [2.6, '1.2 1.2'], [2.9, '1 1', 'p2io'], [D, '1 1']], ONCE)] },
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.5, '-6 2', 'p2io'], [2.6, '-6 2'], [2.9, '0 0', 'p2io'], [D, '0 0']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [0.4, '1.2 1.2', 'p2out'], [2.6, '1.2 1.2'], [2.9, '1 1', 'p2io'], [D, '1 1']], ONCE)],
+    },
   }), `translate(-53.5 -${FLOOR})`), `translate(53.5 ${FLOOR})`, leanIn, tilt)
 }
 
