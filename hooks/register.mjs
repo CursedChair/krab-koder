@@ -425,6 +425,12 @@ export function register(on) {
     if (typeof savedSnow === 'number') firstSnowSeason = savedSnow
     const savedSize = await $.store.get('size')
     if (typeof savedSize === 'string' && savedSize in SIZES) size = savedSize
+    // A brand-new install says hello once and points to the setup commands (not for someone who has already set things up)
+    const isSetUp = place !== null || regions.length > 0 || Object.keys(days).length > 0
+    if (!isSetUp && !(await $.store.get('welcomed'))) {
+      $.ui.toast('Krab Koder is here! Set him up: /krab location <city> for your weather, /krab holidays <codes> for your holidays, /krab birthday <date>. See /krab settings.')
+      await $.store.set('welcomed', true)
+    }
     await $.command.register({
       name: 'krab',
       description: 'Krab above the prompt: /krab on, off, small, normal, big, outfit, weather, settings, birthday, location, holidays',
@@ -858,7 +864,13 @@ export function register(on) {
     // Everything you have set, in one line
     if (choice === 'settings') {
       const dayList = Object.entries(DAY_NAMES).map(([key, name]) => `${name}: ${monthDayWords(days[key])}`).join('; ')
-      return { text: `${dayList}. Location: ${place?.name ?? 'not set'}. Holidays: ${regions.length ? regions.join(', ') : 'worldwide only'}.` }
+      const missing = [
+        ...(place ? [] : ['/krab location <city> for your weather and seasons']),
+        ...(regions.length ? [] : ['/krab holidays CA US (your country codes) for your holidays']),
+        ...(Object.values(days).some(Boolean) ? [] : ['/krab birthday Jan 15 (and gf-birthday, bf-birthday, anniversary) for your days']),
+      ]
+      const hint = missing.length ? ` To set up: ${missing.join('; ')}.` : ''
+      return { text: `${dayList}. Location: ${place?.name ?? 'not set'}. Holidays: ${regions.length ? regions.join(', ') : 'worldwide only'}.${hint}` }
     }
     if (choice === 'time' || choice.startsWith('time ')) {
       const wanted = choice.slice('time'.length).trim() || 'auto'

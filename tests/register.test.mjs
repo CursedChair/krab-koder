@@ -17,6 +17,7 @@ function harness({ store = {}, surface = 'desktop', columns = 64, web = null } =
   const hooks = []
   const timers = []
   const invalidations = []
+  const toasts = []
   const saved = { outfit: 'off', ...store }
   const on = (event, a, b) => hooks.push({ event, matcher: b ? a : null, fn: b ?? a })
   register(on)
@@ -37,6 +38,7 @@ function harness({ store = {}, surface = 'desktop', columns = 64, web = null } =
     },
     ui: {
       invalidate: (site) => invalidations.push(site),
+      toast: (text) => toasts.push(text),
       resolve: () => ({
         Box: (props) => ({ box: props }),
         Text: (props) => ({ text: props.children[0] }),
@@ -63,6 +65,7 @@ function harness({ store = {}, surface = 'desktop', columns = 64, web = null } =
   const api = {
     saved,
     invalidations,
+    toasts,
     fire,
     render,
     tick,
@@ -806,4 +809,21 @@ test('in a quiet spell he fidgets once before dozing off', async () => {
   h.advance(6_000)
   await h.tick()
   assert.equal(await lookName(h), 'calm', 'only once per quiet spell')
+})
+
+test('a brand-new install says hello once and points to the setup commands; settings say how to fill in what is missing', async () => {
+  const h = harness()
+  await h.start()
+  assert.equal(h.toasts.length, 1)
+  assert.match(h.toasts[0], /\/krab location/)
+  assert.match(h.toasts[0], /\/krab holidays/)
+  const again = harness({ store: { welcomed: true } })
+  await again.start()
+  assert.equal(again.toasts.length, 0, 'only the first time ever')
+  const set = harness({ store: { regions: ['CA'] } })
+  await set.start()
+  assert.equal(set.toasts.length, 0, 'not for someone already set up')
+  const text = (await h.fire('command.run', { command: 'krab', args: 'settings' })).text
+  assert.match(text, /\/krab location <city>/)
+  assert.match(text, /\/krab birthday/)
 })
