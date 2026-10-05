@@ -106,7 +106,7 @@ Around 80 outfits for holidays around the world, plus your birthday, a partner's
   </tr>
   <tr>
     <td align="center"><img src="docs/outfit-diwali.svg" width="240" alt="Ticking off a task at Diwali"><br><b>Diwali</b><br><sub>diyas and fireworks</sub></td>
-    <td align="center"><img src="docs/outfit-holi.svg" width="240" alt="Waving goodbye at Holi"><br><b>Holi</b><br><sub>clouds of colour</sub></td>
+    <td align="center"><img src="docs/outfit-newyear.svg" width="240" alt="Waving goodbye to the old year in a party hat, with fireworks"><br><b>New Year's Eve</b><br><sub>waving goodbye to the old year</sub></td>
     <td align="center"><img src="docs/outfit-oktoberfest.svg" width="240" alt="Lifting a trophy at Oktoberfest"><br><b>Oktoberfest</b><br><sub>bunting and a pretzel</sub></td>
   </tr>
   <tr>
