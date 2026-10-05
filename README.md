@@ -124,7 +124,7 @@ Some only come around once a year, some once every four years, and one only for 
   <tr>
     <td align="center"><img src="docs/rare-dayofdead.svg" width="240" alt="Day of the Dead face paint, waving hello"><br><b>Day of the Dead</b><br><sub>papel picado and marigolds</sub></td>
     <td align="center"><img src="docs/rare-hanukkah.svg" width="240" alt="Hanukkah with a menorah"><br><b>Hanukkah</b><br><sub>one more candle lit each night</sub></td>
-    <td align="center"><img src="docs/rare-gta6.svg" width="240" alt="A neon city sunset"><br><b>Neon City Launch Day</b><br><sub>a retro neon sunset and palms</sub></td>
+    <td align="center"><img src="docs/rare-gta6.svg" width="240" alt="Searching the web on a laptop under a neon sunset"><br><b>Neon City Launch Day</b><br><sub>searching the web under a neon sunset</sub></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/rare-cybermonday.svg" width="240" alt="Cyber Monday with falling binary"><br><b>Cyber Monday</b><br><sub>raining ones and zeros</sub></td>
