@@ -1626,12 +1626,7 @@ function listen() {
 // jutting chin, sizing you up side to side, and a glint flashes off his jaw. No mouth needed.
 function mog() {
   const D = EVENT_SECONDS.mog
-  // Hunter eyes: heavy lids that slope lower toward the middle, and a dark line under each eye
-  const lid = (x, inward) => [0, 1, 2].map((k) => {
-    const sx = inward > 0 ? x + k * 6 : x + 11 - k * 6
-    return rect(sx, 10, 6, 6 + k * 1.3, SKIN) + rect(sx, 15.2 + k * 1.3, 6, 1.8, DARK)
-  }).join('')
-  const lids = lid(18, 1) + lid(72, -1) + rect(20, 24, 13, 1.6, DARK, 'fill-opacity=".55"') + rect(74, 24, 13, 1.6, DARK, 'fill-opacity=".55"')
+  const lids = rect(18, 10, 17, 7.5, SKIN) + rect(18, 16.5, 17, 1.8, DARK) + rect(72, 10, 17, 7.5, SKIN) + rect(72, 16.5, 17, 1.8, DARK)
   // The face: a scrunched brow, forehead lines, cheekbones, stubble along the jaw and a cleft chin
   const shade = (x, y, w, h, op) => rect(x, y, w, h, '#7A2E22', `fill-opacity="${op}"`)
   const face = shade(47, 8, 2.4, 9, '.75') + shade(57.5, 8, 2.4, 9, '.75') + shade(40, 1.5, 27, 1.8, '.45') + shade(43, 4.8, 21, 1.8, '.45') +

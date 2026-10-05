@@ -1,6 +1,6 @@
 {
   "name": "krab-koder",
-  "version": "0.50.1",
+  "version": "0.50.2",
   "description": "A little pixel-art crab above the Claude Code prompt who reacts to what Claude is doing, shows your context and plan usage, and dresses for holidays, your days and your local weather. Unofficial fan project, not affiliated with Anthropic. Set it up with /krab settings.",
   "author": {
     "name": "CursedChair"
