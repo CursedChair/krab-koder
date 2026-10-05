@@ -1626,7 +1626,19 @@ function listen() {
 // jutting chin, sizing you up side to side, and a glint flashes off his jaw. No mouth needed.
 function mog() {
   const D = EVENT_SECONDS.mog
-  const lids = rect(18, 10, 17, 7.5, SKIN) + rect(18, 16.5, 17, 1.8, DARK) + rect(72, 10, 17, 7.5, SKIN) + rect(72, 16.5, 17, 1.8, DARK)
+  // Hunter eyes: heavy lids that slope lower toward the middle, and a dark line under each eye
+  const lid = (x, inward) => [0, 1, 2].map((k) => {
+    const sx = inward > 0 ? x + k * 6 : x + 11 - k * 6
+    return rect(sx, 10, 6, 6 + k * 1.3, SKIN) + rect(sx, 15.2 + k * 1.3, 6, 1.8, DARK)
+  }).join('')
+  const lids = lid(18, 1) + lid(72, -1) + rect(20, 24, 13, 1.6, DARK, 'fill-opacity=".55"') + rect(74, 24, 13, 1.6, DARK, 'fill-opacity=".55"')
+  // The face: a scrunched brow, forehead lines, cheekbones, stubble along the jaw and a cleft chin
+  const shade = (x, y, w, h, op) => rect(x, y, w, h, '#7A2E22', `fill-opacity="${op}"`)
+  const face = shade(47, 8, 2.4, 9, '.75') + shade(57.5, 8, 2.4, 9, '.75') + shade(40, 1.5, 27, 1.8, '.45') + shade(43, 4.8, 21, 1.8, '.45') +
+    [0, 1, 2, 3].map((k) => shade(13 + k * 4, 29 + k * 3, 5.5, 2.4, '.55') + shade(88.5 - k * 4, 29 + k * 3, 5.5, 2.4, '.55')).join('') +
+    Array.from({ length: 14 }, (_, k) => shade(16 + (k % 7) * 4.2 + (k >= 7 ? 1.5 : 0), 49 + (k % 7) * 3 + (k >= 7 ? 3 : 0), 1.8, 1.8, '.6') +
+      shade(88 - (k % 7) * 4.2 - (k >= 7 ? 1.5 : 0), 49 + (k % 7) * 3 + (k >= 7 ? 3 : 0), 1.8, 1.8, '.6')).join('') +
+    shade(53, 63, 1.8, 4.5, '.65')
   const brows = rect(16, 6, 7, 3, INK) + rect(22, 7.2, 7, 3, INK) + rect(28, 8.6, 7, 3, INK) +          // furrowed, sloping down toward the middle
     rect(72, 2.6, 6, 3, INK) + rect(77, 1, 7, 3, INK) + rect(83, 2.2, 6, 3, INK)                         // arched up
   const jaw = Array.from({ length: 7 }, (_, k) => rect(12 + k * 4.2, 45 + k * 3, 5.5, 3, DARK) + rect(89.5 - k * 4.2, 45 + k * 3, 5.5, 3, DARK)).join('') +
@@ -1636,7 +1648,7 @@ function mog() {
   const closer = anim('scale', D, [[0, '1 1'], [0.2, '1 1'], [1.4, '1.15 1.15', 'sio'], [D - 0.5, '1.15 1.15'], [D, '1 1', 'p2io']], ONCE)
   return wrap(wrap(figure({
     ownProps: true,
-    heldRaw: show(lids + brows + jaw) + glint,
+    heldRaw: show(lids + brows + jaw + face) + glint,
     upper: [
       anim('translate', D, [[0, '0 0'], [0.2, '0 0'], [1.4, '-6 -6', 'sio'], [1.9, '-9 -6', 'sio'], [2.5, '-3 -6', 'sio'], [2.9, '-6 -6', 'sio'], [D - 0.5, '-6 -6'], [D, '0 0', 'p2io']], ONCE),
       anim('scale', D, [[0, '1 1'], [0.2, '1 1'], [1.4, '1.1 1.1', 'sio'], [D - 0.5, '1.1 1.1'], [D, '1 1', 'p2io']], ONCE),
