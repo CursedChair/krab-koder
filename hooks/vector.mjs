@@ -1584,18 +1584,18 @@ function listen() {
     rect(-10, 20, 12, 26, SKIN)
   // It grows from where it joins his head
   const grow = anim('scale', D, [[0, '0 0'], [0.2, '0 0'], [0.6, '1.15 1.15', 'back'], [0.75, '1 1', 'p2io'], [2.6, '1 1'], [2.9, '0 0', 'p2in'], [D, '0 0']], ONCE)
-  const sprout = wrap(wrap(ear, 'translate(0 -35)'), 'translate(94 26)', grow)
+  const sprout = wrap(wrap(ear, 'translate(0 -35)'), 'translate(84 26)', grow)
   // A flat hand held up just behind the ear: fingers together and pointing up, the lines between them, a thumb toward the ear
   const line = `stroke="${DARK}" stroke-width="1.6"`
-  const HX = 137
+  const HX = 127
   const HY = -14
   const flatHand = rect(HX - 5, HY + 30, 8, 11, SKIN, line) +
     [[0, 4], [5.5, 0], [11, 2], [16.5, 8]].map(([dx, dy]) => rect(HX + dx, HY + dy, 5.5, 34 - dy, SKIN, line)).join('') +
     rect(HX, HY + 26, 22, 24, SKIN, line) + rect(HX + 1, HY + 22, 20, 8, SKIN) + rect(HX + 4, HY + 48, 15, 10, SKIN, line) +
     rect(HX + 17, HY + 10, 3, 38, '#C96A50', 'fill-opacity=".6"')
-  const raise = anim('translate', D, [[0, '-52 35'], [0.5, '0 0', 'p2out'], [2.7, '0 0'], [D, '-52 35', 'p2io']], ONCE)
+  const raise = anim('translate', D, [[0, '-42 35'], [0.5, '0 0', 'p2out'], [2.7, '0 0'], [D, '-42 35', 'p2io']], ONCE)
   const waves = [0, 0.27, 0.54].map((begin) => wrap(rect(0, 0, 3, 6, '#8FC7F2') + rect(3, 6, 3, 16, '#8FC7F2') + rect(0, 22, 3, 6, '#8FC7F2'), '',
-    anim('translate', 0.8, [[0, '196 0'], [0.8, '168 4']], { begin }), anim('opacity', 0.8, [[0, '0'], [0.2, '1', 'lin'], [0.8, '0', 'lin']], { begin }))).join('')
+    anim('translate', 0.8, [[0, '186 0'], [0.8, '158 4']], { begin }), anim('opacity', 0.8, [[0, '0'], [0.2, '1', 'lin'], [0.8, '0', 'lin']], { begin }))).join('')
   // The look from the photos, without a mouth: one brow raised, the other eye squinting
   const face = rect(19, 4, 15, 3, INK) + rect(31, 2, 4, 3, INK) + rect(72, 9, 18, 3, INK) + rect(75, 12, 13, 5, SKIN)
   return figure({
