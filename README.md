@@ -107,7 +107,7 @@ Around 80 outfits for holidays around the world, plus your birthday, a partner's
   <tr>
     <td align="center"><img src="docs/outfit-diwali.svg" width="240" alt="Ticking off a task at Diwali"><br><b>Diwali</b><br><sub>diyas and fireworks</sub></td>
     <td align="center"><img src="docs/outfit-newyear.svg" width="240" alt="Waving goodbye to the old year in a party hat, with fireworks"><br><b>New Year's Eve</b><br><sub>waving goodbye to the old year</sub></td>
-    <td align="center"><img src="docs/outfit-oktoberfest.svg" width="240" alt="Lifting a trophy at Oktoberfest"><br><b>Oktoberfest</b><br><sub>bunting and a pretzel</sub></td>
+    <td align="center"><img src="docs/outfit-usa.svg" width="240" alt="Lifting a trophy on the Fourth of July, with fireworks"><br><b>Fourth of July</b><br><sub>stars, stripes and fireworks</sub></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/outfit-canada.svg" width="240" alt="Lifting weights on Canada Day"><br><b>Canada Day</b><br><sub>pumping iron for the country</sub></td>
