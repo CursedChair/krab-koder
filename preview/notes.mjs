@@ -18,7 +18,7 @@ export const PRIORITY = [
   { name: 'Waking up', looks: ['wake'], patch: { wakeAgeMs: 100 }, note: `${seconds(WAKE_MS)} after anything wakes him.` },
   { name: 'A plan limit has run out', looks: ['limit'], patch: { limit: { state: 'clock', percent: LIMIT_REACHED_AT } }, note: `At ${LIMIT_REACHED_AT}% of your five-hour or weekly limit. He is out cold with X eyes until it resets. Only sleeping and compacting beat it.` },
   { name: 'Claude is waiting on your answer', looks: ['permission', 'asking'], patch: { waiting: 'permission' }, note: 'A permission dialog or Claude\'s questions are up. It shows until you answer, because nothing moves until you do.' },
-  { name: 'An event: flag, gym, a limit alert, or a reaction', looks: ['flag', 'gym', 'clock', 'calendar', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog', 'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'chart', 'kanban', 'pet', 'grumpy', 'bow', 'party', 'longscroll', 'knock', 'whale', 'snake', 'ferris', 'erase', 'hatch', 'puff', 'wrench', 'multiarm', 'boxin', 'sweep'], patch: { gymAgeMs: 100 }, note: 'If two play at once, the newer one wins. They even interrupt Claude\'s work.' },
+  { name: 'An event: flag, gym, a limit alert, or a reaction', looks: ['flag', 'gym', 'clock', 'calendar', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog', 'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'wonder', 'thumbsup', 'comfort', 'heavybook', 'shredder', 'relabel', 'download', 'rewind', 'drench', 'medal', 'welcomeback', 'cake', 'chart', 'kanban', 'pet', 'grumpy', 'bow', 'party', 'longscroll', 'knock', 'whale', 'snake', 'ferris', 'erase', 'hatch', 'puff', 'wrench', 'multiarm', 'boxin', 'sweep'], patch: { gymAgeMs: 100 }, note: 'If two play at once, the newer one wins. They even interrupt Claude\'s work.' },
   { name: 'Context window nearly full', looks: ['critical'], patch: { mood: 'critical' }, note: `${CRITICAL_AT}% or more. The one exception: a plan limit at ${URGENT_AT}% or more outranks it, because you can free up context but not your week.` },
   { name: 'Claude is thinking hard', looks: ['gears'], patch: { turnRunning: true, thinkingMs: GEARS_MS + 1000 }, note: `Thinking for ${seconds(GEARS_MS)} with nothing written yet.` },
   { name: 'Claude is working', looks: ['think', 'edit', 'shell', 'look'], patch: { turnRunning: true }, note: 'Thinking, writing, running a command, or reading.' },
@@ -583,6 +583,66 @@ export const NOTES = {
   weekend: {
     starts: 'Your first message on a Saturday or Sunday.',
     lasts: `${seconds(EVENT_MS.weekend)}, once. He lounges in a striped beach chair in sunglasses, typing on a laptop on his lap, a cold drink beside him.`,
+    then: 'Back to Claude working on your message.',
+  },
+  wonder: {
+    starts: 'Your message starts by wondering: why..., how does..., how come... (a frustrated "why is this broken" gets the nerves instead).',
+    lasts: `${seconds(EVENT_MS.wonder)}, once. He scratches his head under a question mark, which pops into a lightbulb, and his eyes go wide.`,
+    then: 'Back to Claude working on your message.',
+  },
+  thumbsup: {
+    starts: 'Your whole message is a quick okay: k, ok, y, yes, sure, go, or 👍.',
+    lasts: `${seconds(EVENT_MS.thumbsup)}, once. He gives a small thumbs-up and a nod.`,
+    then: 'Back to Claude working on your message.',
+  },
+  comfort: {
+    starts: 'Your message owns up to a slip: oops, whoops, my bad, my mistake.',
+    lasts: `${seconds(EVENT_MS.comfort)}, once. He gives a slow, understanding nod, twice, eyes soft.`,
+    then: 'Back to Claude working on your message.',
+  },
+  heavybook: {
+    starts: 'Claude reads a giant file (1,500 lines or more).',
+    lasts: `${seconds(EVENT_MS.heavybook)}, once. He heaves a huge book off the floor, shaking, holds it up for a moment, and drops it with a thud.`,
+    then: 'Back to Claude working.',
+  },
+  shredder: {
+    starts: 'Claude deletes files (rm, git rm, trash; a forced recursive delete gets the risky look instead).',
+    lasts: `${seconds(EVENT_MS.shredder)}, once. He feeds three sheets into a little shredder and the strips pile up in its bin.`,
+    then: 'Back to Claude working.',
+  },
+  relabel: {
+    starts: 'Claude moves or renames files (mv, git mv).',
+    lasts: `${seconds(EVENT_MS.relabel)}, once. He peels the old label off a box and slaps a new yellow one on.`,
+    then: 'Back to Claude working.',
+  },
+  download: {
+    starts: 'Claude downloads something (curl, wget).',
+    lasts: `${seconds(EVENT_MS.download)}, once. A blue package with a down arrow floats down on a little parachute and he catches it.`,
+    then: 'Back to Claude working.',
+  },
+  rewind: {
+    starts: 'Claude undoes changes (git restore, git revert, git checkout -- a file, a soft git reset).',
+    lasts: `${seconds(EVENT_MS.rewind)}, once. He holds up a cassette tape and its reels spin backwards, under a rewind sign.`,
+    then: 'Back to Claude working.',
+  },
+  drench: {
+    starts: 'Claude runs 25 tools in one reply.',
+    lasts: `${seconds(EVENT_MS.drench)}, once. He wipes his brow, then tips a water bottle over his head with relief.`,
+    then: 'Back to Claude working.',
+  },
+  medal: {
+    starts: 'Your 100th message of the day.',
+    lasts: `${seconds(EVENT_MS.medal)}, once. A gold medal with 100 on it drops onto a ribbon round his neck and he swells with pride.`,
+    then: 'Back to Claude working on your message.',
+  },
+  welcomeback: {
+    starts: 'Your message after an hour with nothing happening (unless a morning, Monday or weekend look comes first).',
+    lasts: `${seconds(EVENT_MS.welcomeback)}, once. He springs up twice, waving both arms, with a YAY!`,
+    then: 'Back to Claude working on your message.',
+  },
+  cake: {
+    starts: 'Your message once the session is an hour old, then three hours, five hours, and so on.',
+    lasts: `${seconds(EVENT_MS.cake)}, once. A little cake with a candle appears; he leans in and blows the candle out.`,
     then: 'Back to Claude working on your message.',
   },
   cube: {

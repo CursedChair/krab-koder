@@ -1007,7 +1007,7 @@ const TRIGGERS = {
   cube: tool('mcp__unreal__spawn_actor'), unity: tool('mcp__unityMCP__manage_scene'),
   comb: tool('Bash', { command: 'npx eslint .' }), dig: tool('Bash', { command: 'psql -c "select 1"' }),
   labcoat: tool('Edit', { file_path: '/app/cart.test.mjs', old_string: 'a', new_string: 'b' }), paint: tool('Edit', { file_path: '/app/site.css', old_string: 'a', new_string: 'b' }),
-  quill: tool('Edit', { file_path: '/README.md', old_string: 'a', new_string: 'b' }), redbutton: tool('Bash', { command: 'git push --force' }), chart: tool('mcp__visualize__show_widget'), sculpt: tool('mcp__blender__get_scene_info'),
+  quill: tool('Edit', { file_path: '/README.md', old_string: 'a', new_string: 'b' }), redbutton: (h) => h.fire('tool.call', { tool: 'Bash', input: { command: 'git push --force' } }, () => ({ deny: 'still pushing' })), chart: tool('mcp__visualize__show_widget'), sculpt: tool('mcp__blender__get_scene_info'),
   kanban: tool('Bash', { command: 'python3 tools/kanban.py add Backlog "x"' }), whale: tool('Bash', { command: 'docker compose up -d' }),
   snake: tool('Bash', { command: 'python3 scripts/report.py' }), ferris: tool('Bash', { command: 'cargo build' }),
   erase: tool('Edit', { file_path: '/a.mjs', old_string: 'x\n'.repeat(30), new_string: 'y' }), hatch: tool('Write', { file_path: '/project/brand-new.mjs', content: 'x' }),
@@ -1030,8 +1030,16 @@ const TRIGGERS = {
   bricks: tool('Bash', { command: 'npm run build' }), detective: tool('Bash', { command: 'npm audit' }), rug: tool('Bash', { command: 'git stash' }),
   signpost: tool('Bash', { command: 'git switch dev' }), checkall: tool('TodoWrite', { todos: [{ content: 'a', status: 'completed' }] }),
   // The session starts on a Wednesday at noon: jump to the weekend, or to the next Monday morning
-  weekend: (h) => { h.advance(3 * 24 * 60 * 60 * 1000); return h.fire('prompt.submit', { text: 'ok', origin: { kind: 'composer' } }) },
-  monday: (h) => { h.advance((4 * 24 + 21) * 60 * 60 * 1000); return h.fire('prompt.submit', { text: 'ok', origin: { kind: 'composer' } }) },
+  weekend: (h) => { h.advance(3 * 24 * 60 * 60 * 1000); return h.fire('prompt.submit', { text: 'start on the menu', origin: { kind: 'composer' } }) },
+  monday: (h) => { h.advance((4 * 24 + 21) * 60 * 60 * 1000); return h.fire('prompt.submit', { text: 'start on the menu', origin: { kind: 'composer' } }) },
+  // Quick okays, slips, wondering, and more of what Claude runs
+  thumbsup: say('ok'), comfort: say('oops'), wonder: say('how does the cache work?'),
+  shredder: tool('Bash', { command: 'rm old.txt' }), relabel: tool('Bash', { command: 'mv a.js b.js' }), download: tool('Bash', { command: 'curl -sLO https://example.com/x.zip' }),
+  rewind: tool('Bash', { command: 'git restore app.js' }),
+  heavybook: (h) => h.fire('tool.call', { tool: 'Read', input: { file_path: '/big.log' } }, () => { h.advance(500); return { ref: 1, result: { type: 'text', file: { totalLines: 5_000, content: 'x' } }, text: '' } }),
+  drench: async (h) => { for (let i = 0; i < 25; i++) await h.fire('tool.call', { tool: 'Glob', input: { pattern: '*' } }, ok) },
+  // An hour with nothing happening, then a message (the session is not yet an hour old when the hour starts)
+  welcomeback: (h) => { h.advance(61 * 60 * 1000); return h.fire('prompt.submit', { text: 'hi', origin: { kind: 'composer' } }) },
   // Petting him
   pet: (h) => h.fire('ui.press', { element: 'krab-pet' }),
 }
@@ -1077,6 +1085,25 @@ test('in a quiet spell around lunch he eats a sandwich', async () => {
   h.advance(30_000)
   await h.tick()
   assert.equal(await lookName(h), 'sandwich')
+})
+
+test('the 100th message of the day earns a medal, and a session an hour old earns a cake once per milestone', async () => {
+  const h = harness({ store: { dayMessages: { day: `${new Date(START).getFullYear()}-${new Date(START).getMonth()}-${new Date(START).getDate()}`, count: 98 } } })
+  await h.start()
+  const say = async (text) => { await h.fire('prompt.submit', { text, origin: { kind: 'composer' } }); h.advance(2_000) }
+  await say('next')
+  assert.notEqual(await lookName(h), 'medal')
+  h.advance(5_000)
+  await say('next')
+  assert.equal(await lookName(h), 'medal')
+  // Keep busy for just over an hour (a message every 10 minutes, so it is never "away")
+  for (let i = 0; i < 5; i++) { h.advance(10 * 60 * 1000); await say('next') }
+  h.advance(11 * 60 * 1000)
+  await say('next')
+  assert.equal(await lookName(h), 'cake')
+  h.advance(5 * 60 * 1000)
+  await say('next')
+  assert.notEqual(await lookName(h), 'cake', 'once per milestone')
 })
 
 test('the late-night yawn plays for a message sent between 1 and 5 in the morning', async () => {

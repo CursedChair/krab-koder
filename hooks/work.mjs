@@ -78,6 +78,11 @@ const SECURITY_CHECK = /\b(?:(?:npm|pnpm|yarn|bun)\s+audit|pip-audit|cargo\s+aud
 const GIT_STASH = /\bgit\s+stash\b(?!\s+(?:list|show|pop|apply|drop|clear))/
 const GIT_BRANCH_SWITCH = /\bgit\s+(?:switch\b|checkout\s+(?!--)(?:-b\s+)?[\w./-]+\s*(?:$|[;&|]))/
 const BUILD = /\b(?:(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?build|make(?!\s+test)(?:\s+[\w-]+)?\s*(?:$|[;&|])|go\s+build|vite\s+build|next\s+build|webpack\b|gradlew?\s+(?:build|assemble)|xcodebuild\b|swift\s+build|dotnet\s+build|mvn\s+(?:package|install|compile))/
+// Deleting, moving or renaming, downloading, and undoing (a forced, recursive delete is the risky look instead)
+const DELETE_FILES = /(?:^|[;&|]\s*)(?:git\s+rm|rm|trash|unlink)(?![^;&|\n]*\s-[a-zA-Z]*r)\s/
+const MOVE_FILES = /(?:^|[;&|]\s*)(?:git\s+)?mv\s/
+const DOWNLOAD = /\b(?:curl|wget)\b/
+const UNDO = /\bgit\s+(?:restore|revert|checkout\s+--\s|reset\s+(?!--hard)\S)/
 const LINT = /\b(?:prettier|eslint|biome|stylelint|ruff|isort|flake8|pylint|gofmt|goimports|golangci-lint|rustfmt|rubocop|swiftlint|swiftformat|ktlint|clang-format)\b|\bcargo\s+(?:fmt|clippy)\b|\bgo\s+(?:fmt|vet)\b|\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?(?:lint|format|fmt)\b/
 const DATABASE = /\b(?:psql|mysql|sqlite3|mongosh|redis-cli|pg_dump|pg_restore|mysqldump|drizzle-kit|alembic|flyway|liquibase)\b|\bprisma\s+(?:migrate|db|studio)\b|\bsupabase\s+(?:db|migration)\b|\brails\s+db:|\bmanage\.py\s+(?:migrate|makemigrations|dbshell)\b/
 // The kind of file an edit is to: tests, styles, or docs
@@ -131,6 +136,10 @@ export function toolReaction(tool, input) {
   if (name === 'Bash') {
     const command = String(input?.command ?? '')
     if (KANBAN.test(command)) return 'kanban'
+    if (UNDO.test(command)) return 'rewind'
+    if (DOWNLOAD.test(command)) return 'download'
+    if (DELETE_FILES.test(command)) return 'shredder'
+    if (MOVE_FILES.test(command)) return 'relabel'
     if (LINT.test(command)) return 'comb'
     if (DATABASE.test(command)) return 'dig'
     if (DOCKER.test(command)) return 'whale'
@@ -160,6 +169,12 @@ const FRUSTRATED = /\b(?:wtf|wth|ffs|fml|ugh+|dammit|damn|bro|bruh|smh|broken|st
 const GOOD_MORNING = /\bgood\s*morning\b|^\W*(?:gm|g'?morning|mornin'?g?)\b/i
 const GOOD_NIGHT = /\bgood\s*night\b|\bnighty?[\s-]*night\b|^\W*(?:gn|g'?night|nite|night)\b(?!\s*(?:mode|theme|time|shift|light|sky|vision))/i
 
+// A quick okay: the whole message is "k", "ok", "y", "yes", "sure", "go" or a 👍
+const QUICK_OK = /^\s*(?:k+|kk|ok(?:ay)?|okie|y|ya|yes|yep|yup|sure|go|go ahead|do it|sounds good|👍)\s*[.!]*\s*$/iu
+// You own up to a slip
+const YOUR_SLIP = /\b(?:oops|whoops|my bad|my mistake|my fault)\b/i
+// Wondering how or why something works (a frustrated "why is this broken" is the nerves instead)
+const WONDER = /^\W*(?:why|how (?:does|do|did|come|would|can|is))\b/i
 const LAUGH = /\b(?:lo+l(?:o*l)*|lmf?ao+|rofl|ha(?:ha)+h?|he(?:he)+)\b|😂|🤣/i
 const BRB = /\b(?:brb|bbl|be right back|back in (?:a )?(?:bit|sec|min(?:ute)?|few))\b/i
 const FIRE = /🔥/u
@@ -177,6 +192,7 @@ export function messageReaction(text) {
   const letters = words.replace(/[^A-Za-z]/g, '')
   const isShouting = letters.length >= 8 && letters.replace(/[^A-Z]/g, '').length / letters.length >= 0.7
   if (words.length >= LONG_PASTE_CHARS) return 'paperstack'
+  if (QUICK_OK.test(words)) return 'thumbsup'
   if (MOG.test(words)) return 'mog'
   if (GOOD_MORNING.test(words)) return 'goodmorning'
   if (GOOD_NIGHT.test(words)) return 'goodnight'
@@ -185,9 +201,11 @@ export function messageReaction(text) {
   if (FIRE.test(words)) return 'onfire'
   if (PARTY.test(words)) return 'party'
   if (HEART.test(words)) return 'blush'
+  if (YOUR_SLIP.test(words)) return 'comfort'
   if (THANKS.test(words) && !isShouting) return 'blush'
   if (isShouting) return 'flinch'
   if (FRUSTRATED.test(words)) return 'nervous'
+  if (WONDER.test(words)) return 'wonder'
   return null
 }
 
@@ -201,6 +219,23 @@ export function attachmentReaction(attachments) {
 
 // Late at night: from 1 to 5 in the morning
 export const isLateNight = (hour) => hour >= 1 && hour < 5
+// A Read that brought back a giant file: this many lines in the file, or this much text
+export const GIANT_FILE_LINES = 1_500
+const GIANT_FILE_CHARS = 60_000
+export function isGiantRead(result) {
+  if (!result || 'deny' in result || result.isError) return false
+  const file = result.result?.file ?? result.result
+  const lines = Number(file?.totalLines ?? file?.numLines ?? 0)
+  return lines >= GIANT_FILE_LINES || outputOf(result).length >= GIANT_FILE_CHARS || String(file?.content ?? '').length >= GIANT_FILE_CHARS
+}
+// This many tool calls in one reply earns a drenching
+export const LONG_TOOL_RUN = 25
+// Messages in a day that earn a medal
+export const DAY_MEDAL_AT = 100
+// A gap this long since anything happened counts as being away; and the session ages that earn a cake: an hour, then every two
+export const AWAY_MS = 60 * 60 * 1000
+export const nextCakeAt = (cakes) => (1 + cakes * 2) * 60 * 60 * 1000
+
 // Monday from 5 in the morning to noon, and the weekend
 export const isMondayMorning = (date) => date.getDay() === 1 && date.getHours() >= 5 && date.getHours() < 12
 export const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6

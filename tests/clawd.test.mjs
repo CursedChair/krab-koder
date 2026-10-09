@@ -36,7 +36,7 @@ const STATE_CTX = {
   permission: { waiting: 'permission', turnRunning: true },
   asking: { waiting: 'asking', turnRunning: true },
   gears: { turnRunning: true, thinkingMs: 10_000 },
-  ...Object.fromEntries(['shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog', 'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'chart', 'kanban', 'pet', 'grumpy', 'bow', 'party', 'longscroll', 'knock', 'whale', 'snake', 'ferris', 'erase', 'hatch', 'puff', 'wrench', 'multiarm', 'boxin', 'sweep'].map((name) => [name, { turnRunning: true, events: { [name]: 100 } }])),
+  ...Object.fromEntries(['shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog', 'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'wonder', 'thumbsup', 'comfort', 'heavybook', 'shredder', 'relabel', 'download', 'rewind', 'drench', 'medal', 'welcomeback', 'cake', 'chart', 'kanban', 'pet', 'grumpy', 'bow', 'party', 'longscroll', 'knock', 'whale', 'snake', 'ferris', 'erase', 'hatch', 'puff', 'wrench', 'multiarm', 'boxin', 'sweep'].map((name) => [name, { turnRunning: true, events: { [name]: 100 } }])),
 }
 
 function run(life, ctx, ticks) {
@@ -107,7 +107,7 @@ test('stateFor picks the look that matches what is happening', () => {
     assert.equal(stateFor({ ...poseCtx, ...patch }), state, state)
   }
   assert.equal(stateFor({ ...poseCtx, wakeAgeMs: 300 }), 'wake')
-  assert.equal(STATES.length, 134)
+  assert.equal(STATES.length, 146)
   assert.deepEqual([...STATES].sort(), Object.keys(STATE_CTX).sort())
 })
 
@@ -461,7 +461,7 @@ test('laughing, emoji, brb, walls of text, builds, security checks, stashes, bra
   assert.equal(toolReaction('Bash', { command: 'git stash' }), 'rug')
   assert.equal(toolReaction('Bash', { command: 'git stash pop' }), null)
   assert.equal(toolReaction('Bash', { command: 'git switch dev' }), 'signpost')
-  assert.equal(toolReaction('Bash', { command: 'git checkout -- app.js' }), null, 'restoring a file is not a branch')
+  assert.equal(toolReaction('Bash', { command: 'git checkout -- app.js' }), 'rewind', 'restoring a file is an undo, not a branch')
   assert.equal(toolReaction('Bash', { command: 'npm run build' }), 'bricks')
   assert.equal(toolReaction('Bash', { command: 'make test' }), null)
   assert.equal(toolReaction('Bash', { command: 'cargo build' }), 'ferris', 'the crab buddy keeps Rust')
@@ -471,4 +471,24 @@ test('laughing, emoji, brb, walls of text, builds, security checks, stashes, bra
   assert.equal(isMondayMorning(new Date(2026, 9, 5, 14)), false)
   assert.equal(isWeekend(new Date(2026, 9, 10, 9)), true)
   assert.equal(isWeekend(new Date(2026, 9, 9, 9)), false)
+})
+
+test('wondering, quick okays, slips, giant files, deletes, moves, downloads and undos pick their looks', async () => {
+  const { messageReaction, toolReaction, isGiantRead, nextCakeAt } = await import('../hooks/work.mjs')
+  assert.equal(messageReaction('ok'), 'thumbsup')
+  assert.equal(messageReaction('👍'), 'thumbsup')
+  assert.equal(messageReaction('ok but make it blue'), null, 'only when the okay is the whole message')
+  assert.equal(messageReaction('oops wrong file'), 'comfort')
+  assert.equal(messageReaction('how does the cache work?'), 'wonder')
+  assert.equal(messageReaction('why is this still broken'), 'nervous', 'frustration wins')
+  assert.equal(toolReaction('Bash', { command: 'rm old.txt' }), 'shredder')
+  assert.equal(toolReaction('Bash', { command: 'rm -rf build' }), null, 'a forced recursive delete is the risky look')
+  assert.equal(toolReaction('Bash', { command: 'git mv a.js b.js' }), 'relabel')
+  assert.equal(toolReaction('Bash', { command: 'curl -sLO https://example.com/x.zip' }), 'download')
+  assert.equal(toolReaction('Bash', { command: 'git restore app.js' }), 'rewind')
+  assert.equal(toolReaction('Bash', { command: 'git reset --hard' }), null)
+  assert.equal(isGiantRead({ result: { file: { totalLines: 3_000 } } }), true)
+  assert.equal(isGiantRead({ result: { file: { totalLines: 40 } } }), false)
+  assert.equal(nextCakeAt(0), 60 * 60 * 1000)
+  assert.equal(nextCakeAt(1), 3 * 60 * 60 * 1000)
 })

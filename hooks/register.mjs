@@ -9,7 +9,7 @@ import { OUTFIT_IDS } from './outfits.mjs'
 import { airUrl, geocodeUrl, KP_URL, parseAir, parseKp, parsePlace, parseWeather, scenesWithWeather, TRIAL, weatherOutfit, weatherUrl } from './weather.mjs'
 import { PERSONAL } from './personal.mjs'
 import { DAY_COMMANDS, DAY_NAMES, monthDayWords, parseCoordinates, parseMonthDay, parseRegions } from './settings.mjs'
-import { attachmentReaction, BREAK_GAP_MS, BREAK_REMINDER_MS, commandReaction, fileLook, isLateNight, isMondayMorning, isWeekend, isTestCommand, LONG_TURN_MS, MILESTONES, LONG_REPLY_CHARS, messageReaction, pickFidget, replyReaction, startReaction, toolReaction } from './work.mjs'
+import { attachmentReaction, AWAY_MS, BREAK_GAP_MS, BREAK_REMINDER_MS, commandReaction, DAY_MEDAL_AT, fileLook, isGiantRead, isLateNight, isMondayMorning, isWeekend, LONG_TOOL_RUN, nextCakeAt, isTestCommand, LONG_TURN_MS, MILESTONES, LONG_REPLY_CHARS, messageReaction, pickFidget, replyReaction, startReaction, toolReaction } from './work.mjs'
 import { outfitFor, REGION_CODES, scenesWithLife, scenesWithSky, scenesWithTime, seasonFor, skyEvents } from './seasons.mjs'
 import { SEASON_SCENES } from './scenery.mjs'
 import { OUTFITS } from './outfits.mjs'
@@ -120,6 +120,19 @@ async function saveSetting($, key, value) {
 
 // Remember the weather setting, for every session
 // One more message sent, counted across all sessions; returns the new count (or 0 if the count could not be kept)
+// Today's message count, kept with the date so it starts over each day
+async function countToday($, today) {
+  try {
+    const saved = await $.store.get('dayMessages')
+    const count = (saved?.day === today ? Number(saved.count) || 0 : 0) + 1
+    await $.store.set('dayMessages', { day: today, count })
+    return count
+  } catch {
+    // Nothing to tell the user: a missed count only means the day's medal may come a message late
+    return 0
+  }
+}
+
 async function countMessage($) {
   try {
     const count = (Number(await $.store.get('messageCount')) || 0) + 1
@@ -233,6 +246,12 @@ export function register(on) {
   let petTimes = []
   // When this reply started, whether he has tapped his foot at it yet, and the night he last yawned at
   let turnStartAt = 0
+  // Tool calls in this reply, and whether that has earned a drenching yet
+  let toolsThisTurn = 0
+  let hasDrenchedThisTurn = false
+  // When the session began, and how many cakes its milestones have earned
+  const sessionStartAt = Date.now()
+  let cakes = 0
   let hasTappedThisTurn = false
   let yawnedFor = ''
   // The day he last did his Monday-morning drag or his weekend lounge
@@ -284,10 +303,12 @@ export function register(on) {
 
   // A one-off reaction starts now (or at a given time); it wakes him up
   // Something that wakes him plays once he has finished waking up, so the wake-up does not hide it
+  // Two looks started in the same moment: the later call wins (it replaces the earlier one)
   const play = (name, at = Date.now()) => {
     touch()
     const awake = wakeAt + WAKE_MS
-    eventAt = { ...eventAt, [name]: Date.now() < awake ? Math.max(at, awake) : at }
+    const start = Date.now() < awake ? Math.max(at, awake) : at
+    eventAt = { ...Object.fromEntries(Object.entries(eventAt).filter(([, t]) => t !== start)), [name]: start }
   }
   // One piece of Claude's reply as it streams: thinking starts his gears, words and tools stop them,
   // several tools in one go sprout extra arms, and how the reply ends picks his reaction to it. Returns the step's tool count.
@@ -829,21 +850,29 @@ export function register(on) {
   })
 
   on('prompt.submit', async ($, e, next) => {
+    // How long nothing had happened before this message (read before touch() marks now as active)
+    const awayMs = Date.now() - lastActivityAt
     touch()
     // Every 100th, 500th, 1,000th... message gets a trophy; otherwise what you sent, how and when can earn a reaction
     const isYours = !e.origin || YOUR_MESSAGES.has(e.origin.kind)
     const now = new Date(Date.now())
     const night = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`
+    const dayCount = await countToday($, night)
     if (MILESTONES.has(await countMessage($))) play('trophy')
+    else if (isYours && dayCount === DAY_MEDAL_AT) play('medal')
     else if (isYours) {
       const reaction = attachmentReaction(e.attachments) ?? (e.origin?.kind === 'bridge' ? 'listen' : null) ?? messageReaction(e.text) ??
         (isLateNight(now.getHours()) && yawnedFor !== night ? 'yawn' : null) ??
         // Once a day: the first message on a Monday morning, or on a weekend day
         (isMondayMorning(now) && weekdayFor !== night ? 'monday' : null) ??
         (isWeekend(now) && weekdayFor !== night ? 'weekend' : null) ??
+        (awayMs >= AWAY_MS ? 'welcomeback' : null) ??
+        (Date.now() - sessionStartAt >= nextCakeAt(cakes) ? 'cake' : null) ??
         (Date.now() - Math.max(stretchStartAt, breakSuggestedAt) >= BREAK_REMINDER_MS ? 'water' : null)
       if (reaction === 'yawn') yawnedFor = night
       if (reaction === 'monday' || reaction === 'weekend') weekdayFor = night
+      // Each milestone's cake once: a session that waited past several gets one cake and moves on to the next milestone ahead
+      if (reaction === 'cake') while (Date.now() - sessionStartAt >= nextCakeAt(cakes)) cakes += 1
       if (reaction === 'water') breakSuggestedAt = Date.now()
       if (reaction) play(reaction)
     }
@@ -856,6 +885,8 @@ export function register(on) {
     touch()
     turnStartAt = Date.now()
     hasTappedThisTurn = false
+    toolsThisTurn = 0
+    hasDrenchedThisTurn = false
     isTurnRunning = true
     lastTool = null
     replyText = ''
@@ -937,6 +968,13 @@ export function register(on) {
       play(toolLook)
       $.ui.invalidate('ui.render')
     }
+    // A long run of tools in one reply: he gets drenched in sweat and cools off, once a reply (after the tool's own look, so it wins)
+    toolsThisTurn += 1
+    if (!hasDrenchedThisTurn && toolsThisTurn >= LONG_TOOL_RUN) {
+      hasDrenchedThisTurn = true
+      play('drench')
+      $.ui.invalidate('ui.render')
+    }
     let result
     try {
       result = await next(e)
@@ -951,7 +989,8 @@ export function register(on) {
       // Claude handed you a file or a page (and it was not refused): he presents it
       const isPublish = e.tool !== 'Artifact' || [undefined, 'publish'].includes(e.input?.action)
       // A finished command: tests passing or failing, a commit, a push
-      const reaction = e.tool === 'Bash' ? commandReaction(e.input?.command, result) : null
+      // A giant file came back from a read: he heaves the huge book
+      const reaction = e.tool === 'Bash' ? commandReaction(e.input?.command, result) : e.tool === 'Read' && isGiantRead(result) ? 'heavybook' : null
       if (reaction) {
         play(reaction)
         $.ui.invalidate('ui.render')

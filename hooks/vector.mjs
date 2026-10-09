@@ -25,7 +25,7 @@ export const COLUMN_PX = 8
 // pole is taller, so the flag gets a taller picture while it plays.
 export const TOP = -46
 export const TOP_TALL = -74
-const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy', 'startled', 'unbox', 'mail', 'music', 'blush', 'listen', 'mog', 'pet', 'grumpy', 'gears', 'party', 'longscroll', 'whale', 'knock', 'browser', 'mouseride', 'spellbook', 'toolbox', 'inbox', 'planner', 'cabinet', 'netcatch', 'cube', 'goodmorning', 'goodnight', 'satellite', 'comb', 'parachute', 'water', 'crossclaws', 'laugh', 'brb', 'paperstack', 'monday'])
+const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy', 'startled', 'unbox', 'mail', 'music', 'blush', 'listen', 'mog', 'pet', 'grumpy', 'gears', 'party', 'longscroll', 'whale', 'knock', 'browser', 'mouseride', 'spellbook', 'toolbox', 'inbox', 'planner', 'cabinet', 'netcatch', 'cube', 'goodmorning', 'goodnight', 'satellite', 'comb', 'parachute', 'water', 'crossclaws', 'laugh', 'brb', 'paperstack', 'monday', 'wonder', 'drench', 'medal', 'welcomeback'])
 export const topFor = (state) => (TALL_LOOKS.has(state) ? TOP_TALL : TOP)
 export const SPRITE_UNITS = 107
 
@@ -3480,6 +3480,244 @@ function weekend() {
   })
 }
 
+// ---- More of you and of Claude: wondering, quick okays, slip-ups, giant files, deleting, renaming, downloads,
+// undoing, long tool runs, a busy day, coming back, and the session's birthday ----
+
+// "why" or "how does": he scratches his head under a question mark, which turns into a lightbulb
+function wonder() {
+  const D = EVENT_SECONDS.wonder
+  const IDEA = 1.8
+  const lift = Math.round(Math.min(0, hatTop()))
+  const question = wrap(pixels(PIXEL['?'], 0, 0, 3, '#FFFFFF'), `translate(66 ${lift - 36})`, anim('opacity', D, [[0, '0'], [0.3, '0'], [0.4, '1', 'lin'], [IDEA, '1'], [IDEA + 0.05, '0', 'lin'], [D, '0']], ONCE))
+  const rays = [-60, -30, 0, 30, 60].map((deg) => wrap(rect(-1, -17, 2, 4, '#FFE066'), `rotate(${deg})`)).join('')
+  const bulb = rays + disc(0, 0, 9, '#FFE066') + rect(-4, -5, 3, 3, '#FFFFFF', 'fill-opacity=".8"') + rect(-5, 8, 10, 3, '#9AA0A6') + rect(-4, 11, 8, 2.5, '#7E848B')
+  const idea = wrap(bulb, `translate(73 ${lift - 26})`, anim('scale', D, [[0, '0 0'], [IDEA, '0 0'], [IDEA + 0.25, '1.2 1.2', 'p2out'], [IDEA + 0.4, '1 1', 'p2io'], [D, '1 1']], ONCE))
+  return figure({
+    ownProps: true,
+    right: { anims: [anim('translate', D, [[0, '0 0'], [0.35, `-20 ${lift - 28}`, 'p2out'], [IDEA - 0.1, `-20 ${lift - 28}`], [IDEA + 0.2, `2 ${lift - 26}`, 'p2out'], [D - 0.3, `2 ${lift - 26}`], [D, '0 0', 'p2io']], ONCE),
+      anim('translate', D, wiggle(D, 0.4, IDEA - 0.15, 0.1, '-3 1', '1 -1', '0 0'), ONCE)] },
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.4, '2 -5', 'p2io'], [D - 0.3, '3 -6'], [D, '0 0', 'p2io']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [0.3, '1 .45', 'p2io'], [IDEA, '1 .45'], [IDEA + 0.15, '1.3 1.3', 'p2out'], [D, '1.3 1.3']], ONCE)],
+    },
+    props: question + idea,
+  })
+}
+
+// A quick "ok", "k" or "y": a small thumbs-up and a nod
+function thumbsup() {
+  const D = EVENT_SECONDS.thumbsup
+  const EDGE = `stroke="${DARK}" stroke-width="1.6"`
+  const thumb = rect(87, 10, 8, 18, SKIN, EDGE) + rect(85, 26, 22, 18, SKIN, EDGE) + rect(87, 31, 18, 1.4, DARK) + rect(87, 36, 18, 1.4, DARK) + (activeOutfit?.sleeve?.('right') ?? '')
+  return figure({
+    ownProps: true,
+    right: { shape: thumb, anims: [holdAt(D, 10, -10, 0.2, D - 0.3)] },
+    upper: [anim('translate', D, [[0, '0 0'], [0.3, '0 0'], [0.45, '0 3', 'sio'], [0.6, '0 0', 'sio'], [D, '0 0']], ONCE)],
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [0.25, '1 .35', 'p2io'], [D - 0.3, '1 .35'], [D, '1 1', 'p2io']], ONCE)] },
+    props: between(pixels(STAR, 104, -6, 1.6, '#FFE9A8'), D, 0.3, D - 0.3),
+  })
+}
+
+// "oops" or "my bad" from you: he gives a slow, understanding nod, twice, eyes soft
+function comfort() {
+  const D = EVENT_SECONDS.comfort
+  const NODS = [0.5, 1.3]
+  const nod = anim('translate', D, [[0, '0 0'], ...NODS.flatMap((t) => [[t, '0 0'], [t + 0.25, '0 5', 'sio'], [t + 0.55, '0 0', 'sio']]), [D, '0 0']], ONCE)
+  return figure({
+    ownProps: true,
+    upper: [nod],
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], ...NODS.flatMap((t) => [[t, '0 0'], [t + 0.25, '0 3', 'sio'], [t + 0.55, '0 0', 'sio']]), [D, '0 0']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [0.3, '1 .4', 'p2io'], [D - 0.3, '1 .4'], [D, '1 1', 'p2io']], ONCE)],
+    },
+  })
+}
+
+// Reading a giant file: he heaves a huge book off the floor, shaking, holds it up for a moment, and drops it with a thud
+function heavybook() {
+  const D = EVENT_SECONDS.heavybook
+  const DROP = 3.0
+  const book = rect(-30, -30, 60, 30, '#B5523B') + rect(-26, -27, 54, 25, CREAM) + [0, 1, 2, 3, 4].map((i) => rect(-26, -23 + i * 5, 54, 0.8, PAPER_SHADE)).join('') + rect(-30, -30, 7, 30, '#8E3B2A') + rect(-30, -2, 60, 2, '#8E3B2A')
+  const LIFT = [[0, 0], [0.6, 0], [1.1, -5, 'p2out'], [1.4, -2, 'p2in'], [2.0, -28, 'p2out'], [DROP - 0.15, -26], [DROP, 0, 'p2in'], [DROP + 0.1, -3, 'p2out'], [DROP + 0.2, 0, 'p2in'], [D, 0]]
+  const lifted = (dx, dy) => anim('translate', D, LIFT.map(([t, y, e]) => [t, `${dx} ${dy + y}`, e]), ONCE)
+  const shake = anim('translate', D, wiggle(D, 0.6, DROP - 0.2, 0.08, '-1 0', '1 0', '0 0'), ONCE)
+  const dust = [-1, 1].map((side) => wrap(rect(-6, -5, 12, 8, '#A8A49A'), `translate(${53 + side * 34} 82)`,
+    anim('translate', D, [[0, '0 0'], [DROP, '0 0'], [DROP + 0.5, `${side * 14} -6`, 'p2out'], [D, `${side * 14} -6`]], ONCE),
+    anim('opacity', D, [[0, '0'], [DROP, '0'], [DROP + 0.05, '.8', 'lin'], [DROP + 0.5, '0', 'lin'], [D, '0']], ONCE))).join('')
+  return figure({
+    ownProps: true,
+    heldRaw: wrap(wrap(book, 'translate(53 86)', lifted(0, 0)), '', shake),
+    left: { hold: true, over: true, anims: [lifted(8, 40), shake] },
+    right: { hold: true, over: true, anims: [lifted(-8, 40), shake] },
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [0.6, '1 1'], [0.8, '1 .2', 'p2io'], [DROP, '1 .2'], [DROP + 0.1, '1.3 1.3', 'p2out'], [D, '1.3 1.3']], ONCE)] },
+    props: dust + drop(100, 2, 0.9) + drop(-8, 6, 1.7),
+  })
+}
+
+// Deleting files: he feeds three sheets of paper into a little shredder, and the strips pile up in its bin
+function shredder() {
+  const D = EVENT_SECONDS.shredder
+  const FEEDS = [0.5, 1.4, 2.3]
+  const sheet = rect(-9, -12, 18, 24, CREAM) + [0, 1, 2, 3].map((i) => rect(-6, -8 + i * 5, i === 3 ? 7 : 12, 1.4, '#C9C2B0')).join('')
+  const sheets = FEEDS.map((t) => wrap(sheet, '', anim('translate', D, [[0, '132 30'], [t + 0.1, '132 30'], [t + 0.3, '132 40', 'p2out'], [t + 0.8, '132 66', 'lin'], [D, '132 66']], ONCE),
+    anim('opacity', D, [[0, '0'], [t, '0'], [t + 0.05, '1', 'lin'], [t + 0.8, '1'], [t + 0.82, '0', 'lin'], [D, '0']], ONCE))).join('')
+  const body = rect(112, 54, 40, 32, '#4A4D52') + rect(110, 50, 44, 6, '#3A3D42') + rect(116, 52, 32, 2, '#111114') + rect(116, 62, 32, 20, '#232428') + rect(146, 57, 3, 3, '#E5484D')
+  const strips = FEEDS.flatMap((t, f) => [0, 1, 2, 3, 4].map((i) => wrap(rect(118 + i * 6 + f, 82 - 4 - f * 4 - (i % 2) * 2, 2, 4 + (i % 3), CREAM), '',
+    anim('opacity', D, [[0, '0'], [t + 0.6, '0'], [t + 0.65, '1', 'lin'], [D, '1']], ONCE)))).join('')
+  const hand = FEEDS.flatMap((t) => [[t, '35 -16', 'p2io'], [t + 0.3, '35 -6', 'p2out'], [t + 0.5, '35 -8']])
+  return figure({
+    ownProps: true,
+    heldRaw: sheets + body + strips,
+    right: { hold: true, over: true, anims: [anim('translate', D, [[0, '0 0'], ...hand, [D - 0.3, '35 -8'], [D, '0 0', 'p2io']], ONCE)] },
+    eyes: { gaze: [anim('translate', D, [[0, '0 0'], [0.4, '6 4', 'p2io'], [D - 0.3, '6 4'], [D, '0 0', 'p2io']], ONCE)] },
+  })
+}
+
+// Renaming or moving files: he peels the old label off a box and slaps a new yellow one on
+function relabel() {
+  const D = EVENT_SECONDS.relabel
+  const PEEL = 0.9
+  const SLAP = 2.0
+  const box = rect(112, 46, 40, 40, '#C8935A') + rect(112, 46, 40, 4, '#A8743F') + rect(130, 46, 4, 40, '#B07F48', 'fill-opacity=".5"')
+  const lines = (fill) => [0, 1, 2].map((i) => rect(4, 3 + i * 4, i === 2 ? 9 : 16, 1.6, fill)).join('')
+  const old = wrap(wrap(rect(0, 0, 24, 14, '#FFFFFF') + lines('#9AA0A6'), '', anim('rotate', D, [[0, '0 0 0'], [PEEL - 0.3, '0 0 0'], [PEEL, '-35 0 0', 'p2out'], [D, '-35 0 0']], ONCE)), 'translate(120 58)',
+    anim('translate', D, [[0, '0 0'], [PEEL, '0 0'], [PEEL + 0.6, '-10 40', 'p2in'], [D, '-10 40']], ONCE), anim('opacity', D, [[0, '1'], [PEEL + 0.4, '1'], [PEEL + 0.6, '0', 'lin'], [D, '0']], ONCE))
+  const fresh = wrap(wrap(rect(-12, -7, 24, 14, '#F2C14E') + wrap(lines(INK), 'translate(-12 -7)'), '', anim('scale', D, [[0, '1.4 1.4'], [SLAP - 0.05, '1.4 1.4'], [SLAP, '1 1', 'p2in'], [SLAP + 0.08, '1.06 1.06', 'p2out'], [SLAP + 0.16, '1 1', 'p2in'], [D, '1 1']], ONCE)), 'translate(132 65)',
+    anim('opacity', D, [[0, '0'], [SLAP - 0.05, '0'], [SLAP, '1', 'lin'], [D, '1']], ONCE))
+  return figure({
+    ownProps: true,
+    heldRaw: box + old + fresh,
+    right: { hold: true, over: true, anims: [anim('translate', D, [[0, '0 0'], [PEEL - 0.4, '30 34', 'p2out'], [PEEL, '26 30', 'p2out'], [PEEL + 0.4, '14 36', 'p2io'], [SLAP - 0.25, '36 26', 'p2io'], [SLAP, '36 32', 'p2in'], [SLAP + 0.3, '36 32'], [D, '0 0', 'p2io']], ONCE)] },
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.4, '6 5', 'p2io'], [D - 0.3, '6 5'], [D, '0 0', 'p2io']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [SLAP + 0.2, '1 1'], [SLAP + 0.35, '1 .35', 'p2io'], [D, '1 .35']], ONCE)],
+    },
+  })
+}
+
+// A download: a blue package with a down arrow floats down on a little parachute and he catches it
+function download() {
+  const D = EVENT_SECONDS.download
+  const CATCH = 1.7
+  const box = rect(-12, -18, 24, 18, '#5E8BFF') + rect(-12, -18, 24, 3, '#8DB3FA') + rect(-2, -14, 4, 7, '#FFFFFF') + poly('-6,-8 6,-8 0,-3', '#FFFFFF')
+  const chute = wrap(poly('-13,-32 -12,-32 -7,-18 -8,-18', INK) + poly('13,-32 12,-32 7,-18 8,-18', INK) + dome(0, -32, 14, '#FFFFFF') + rect(-4, -42, 8, 10, '#5E8BFF'), '',
+    anim('scale', D, [[0, '1 1'], [CATCH, '1 1'], [CATCH + 0.3, '1.3 0', 'p2in'], [D, '1.3 0']], ONCE))
+  const fall = anim('translate', D, [[0, '53 -60'], [CATCH, '53 34', 'p2out'], [CATCH + 0.1, '53 38', 'p2out'], [CATCH + 0.2, '53 34', 'p2in'], [D, '53 34']], ONCE)
+  const sway = anim('rotate', D, [[0, '8 0 -32'], [0.6, '-8 0 -32', 'sio'], [1.2, '6 0 -32', 'sio'], [CATCH, '0 0 -32', 'sio'], [D, '0 0 -32']], ONCE)
+  const reach = (dx) => anim('translate', D, [[0, '0 0'], [CATCH - 0.4, `${dx} -6`, 'p2out'], [CATCH, `${dx} -6`], [CATCH + 0.1, `${dx} -2`, 'p2out'], [CATCH + 0.2, `${dx} -6`, 'p2in'], [D - 0.3, `${dx} -6`], [D, '0 0', 'p2io']], ONCE)
+  return figure({
+    ownProps: true,
+    heldRaw: wrap(wrap(chute + box, '', sway), '', fall),
+    left: { hold: true, over: true, anims: [reach(22)] },
+    right: { hold: true, over: true, anims: [reach(-22)] },
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 -7'], [CATCH, '0 3', 'sio'], [D, '0 3']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [CATCH + 0.2, '1 1'], [CATCH + 0.35, '1 .35', 'p2io'], [D, '1 .35']], ONCE)],
+    },
+  })
+}
+
+// Undoing changes: he holds up a cassette tape and its reels spin backwards, under a rewind sign
+function rewind() {
+  const D = EVENT_SECONDS.rewind
+  const reel = (x) => wrap(disc(0, 0, 5, '#FFFFFF') + rect(-0.8, -5, 1.6, 10, '#2F2F2A') + rect(-5, -0.8, 10, 1.6, '#2F2F2A') + disc(0, 0, 1.5, '#2F2F2A'), `translate(${x} 5)`, anim('rotate', 0.35, [[0, '0'], [0.35, '-360']]))
+  const tape = rect(-25, -16, 50, 32, '#2F2F2A') + rect(-21, -13, 42, 9, '#F2C14E') + rect(-17, -10, 20, 1.6, INK) + rect(-16, -1, 32, 12, '#5E6268') + rect(-9, 8, 18, 2, '#6B4F3A') + reel(-9) + reel(9) + rect(-25, 13, 50, 3, '#1F1E1D')
+  const cassette = wrap(tape, 'translate(53 46)', anim('scale', D, [[0, '0 0'], [0.2, '0 0'], [0.5, '1 1', 'back'], [D - 0.3, '1 1'], [D, '0 0', 'p2in']], ONCE))
+  const lift = Math.round(Math.min(-14, hatTop() - 14))
+  const sign = between(poly(`44,${lift} 54,${lift - 6} 54,${lift + 6}`, '#FFFFFF') + poly(`54,${lift} 64,${lift - 6} 64,${lift + 6}`, '#FFFFFF'), D, 0.5, D - 0.3)
+  const blink = anim('opacity', 0.5, [[0, '1'], [0.25, '.35'], [0.5, '1']])
+  return figure({
+    ownProps: true,
+    heldRaw: cassette,
+    left: { hold: true, over: true, anims: [holdAt(D, 20, 6, 0.4, D - 0.3)] },
+    right: { hold: true, over: true, anims: [holdAt(D, -20, 6, 0.4, D - 0.3)] },
+    eyes: { gaze: [anim('translate', D, [[0, '0 0'], [0.5, '0 5', 'p2io'], [D - 0.3, '0 5'], [D, '0 0', 'p2io']], ONCE)] },
+    props: wrap(sign, '', blink),
+  })
+}
+
+// A long run of tools without a break: he wipes his brow, then tips a water bottle over his head with relief
+function drench() {
+  const D = EVENT_SECONDS.drench
+  const POUR = 1.8
+  const lift = Math.round(Math.min(0, hatTop()))
+  const wipe = [[0, '0 0'], [0.3, `-60 ${-12}`, 'p2out'], [0.7, `-10 ${-14}`, 'sio'], [1.1, `-60 ${-12}`, 'sio'], [1.4, '0 0', 'p2io']]
+  const bottle = rect(2, -4, 8, 4, '#2E6FC0') + rect(0, 0, 12, 22, '#CDEBFF') + rect(0, 9, 12, 5, '#FFFFFF') + rect(0, 14, 12, 8, '#5AA9E6')
+  // Held upside-down-ish above his head: the bottle in his hand's own place, tipped so its mouth points down at him
+  const tipped = wrap(bottle, 'translate(100 20) rotate(150)')
+  const stream = [0, 1, 2, 3, 4, 5].map((i) => wrap(rect(-1.5, 0, 3, 5, SWEAT), '',
+    anim('translate', 0.5, [[0, `${70 - (i % 3) * 8} ${lift - 22}`], [0.5, `${66 - (i % 3) * 8 + (i % 2 ? 10 : -10)} ${lift + 14}`, 'p2in']], { begin: i * 0.09 }),
+    anim('opacity', 0.5, [[0, '1'], [0.4, '1'], [0.5, '0', 'lin']], { begin: i * 0.09 }))).join('')
+  const splash = [0, 1, 2, 3].map((i) => wrap(rect(-1.5, -1.5, 3, 3, SWEAT), `translate(${[14, 30, 78, 94][i]} ${lift + 2})`, anim('translate', 0.5, [[0, '0 0'], [0.5, `${i < 2 ? -6 : 6} 10`, 'p2out']], { begin: i * 0.12 }))).join('')
+  return figure({
+    ownProps: true,
+    right: { hold: true, carry: between(tipped, D, POUR - 0.2, D - 0.3), anims: [anim('translate', D, [...wipe, [POUR - 0.2, `-14 ${lift - 44}`, 'p2out'], [D - 0.3, `-14 ${lift - 44}`], [D, '0 0', 'p2io']], ONCE)] },
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 .45'], [POUR, '1 .45'], [POUR + 0.15, '1 .12', 'p2io'], [D - 0.3, '1 .12'], [D, '1 1', 'p2io']], ONCE)] },
+    upper: [anim('translate', D, [[0, '0 0'], [POUR + 0.2, '0 0'], [POUR + 0.4, '0 2', 'sio'], [D, '0 0', 'sio']], ONCE)],
+    props: drop(100, 4, 0.2) + drop(-6, 6, 0.6) + between(stream + splash, D, POUR, D - 0.4),
+  })
+}
+
+// The 100th message of the day: a gold medal with "100" on it drops onto a ribbon round his neck and he swells with pride
+function medal() {
+  const D = EVENT_SECONDS.medal
+  const LAND = 0.8
+  const ribbon = poly('38,-2 48,-2 56,26 50,28', '#E5484D') + poly('69,-2 59,-2 51,26 57,28', '#3D7BF0')
+  const coin = disc(53.5, 34, 11, '#E7B04A') + disc(53.5, 34, 8.5, '#F2C14E') + digitsSvg('100', 46.5, 31.5, 1.6, '#8A5A1E')
+  const hang = wrap(ribbon + coin, '', anim('translate', D, [[0, '0 -80'], [LAND, '0 0', 'p2in'], [LAND + 0.1, '0 -4', 'p2out'], [LAND + 0.2, '0 0', 'p2in'], [D, '0 0']], ONCE))
+  const swing = wrap(hang, '', anim('rotate', D, [[0, '0 53 0'], [LAND + 0.2, '0 53 0'], [LAND + 0.5, '5 53 0', 'sio'], [LAND + 0.8, '-3 53 0', 'sio'], [LAND + 1.1, '0 53 0', 'sio'], [D, '0 53 0']], ONCE))
+  const stars = [[18, -10], [90, -6], [100, 26]].map(([x, y], i) => between(pixels(STAR, x, y, 1.8, '#FFE9A8'), D, LAND + 0.2 + i * 0.15, D - 0.2)).join('')
+  return figure({
+    ownProps: true,
+    heldRaw: swing,
+    upper: [anim('scale', D, [[0, '1 1'], [LAND + 0.3, '1 1'], [LAND + 0.6, '1.04 1.04', 'p2out'], [D - 0.3, '1.04 1.04'], [D, '1 1', 'p2io']], ONCE)],
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [LAND + 0.2, '1 1'], [LAND + 0.35, '1 .35', 'p2io'], [D, '1 .35']], ONCE)] },
+    props: stars,
+  })
+}
+
+// Back after an hour away: he springs up twice, waving both arms, with a "YAY!"
+function welcomeback() {
+  const D = EVENT_SECONDS.welcomeback
+  const hops = anim('translate', D, [[0, '0 0'], [0.15, '0 4', 'p2out'], [0.4, '0 -16', 'sout'], [0.65, '0 0', 'p2in'], [0.75, '0 3', 'p2out'], [1.0, '0 -14', 'sout'], [1.25, '0 0', 'p2in'], [D, '0 0']], ONCE)
+  // Each hand swings from its own wrist
+  const wave = (begin, x) => anim('rotate', 0.4, [[0, `-20 ${x} 44`], [0.2, `20 ${x} 44`, 'sio'], [0.4, `-20 ${x} 44`, 'sio']], { begin })
+  const bubble = wrap(speech('YAY!'), '', anim('scale', D, [[0, '0 0'], [0.3, '0 0'], [0.55, '1 1', 'back'], [D, '1 1']], ONCE))
+  const stars = [[-6, 8], [104, 30], [0, 40]].map(([x, y], i) => between(pixels(STAR, x, y, 1.8, '#FFE9A8'), D, 0.4 + i * 0.2, D - 0.2)).join('')
+  return wrap(figure({
+    ownProps: true,
+    left: { at: 'translate(-6 -40)', anims: [wave(0, 11)] },
+    right: { at: 'translate(6 -40)', anims: [wave(0.2, 96)] },
+    eyes: { scaleAnims: [anim('scale', D, [[0, '1 1'], [0.2, '1.3 1.3', 'p2out'], [1.3, '1.3 1.3'], [1.45, '1 .35', 'p2io'], [D, '1 .35']], ONCE)] },
+    props: bubble + stars,
+  }), '', hops)
+}
+
+// A session milestone (an hour in, and every couple of hours after): a little cake with a candle, which he blows out
+function cake() {
+  const D = EVENT_SECONDS.cake
+  const BLOW = 2.3
+  const plate = rect(106, 84, 46, 2, '#C9CDD2')
+  const sponge = rect(112, 70, 34, 14, '#F3EFE6') + rect(112, 76, 34, 2, '#E3B26B') + rect(110, 66, 38, 6, '#F27BAA') + [0, 1, 2, 3].map((i) => rect(113 + i * 9, 72, 4, 3 + (i % 2) * 2, '#F27BAA')).join('') +
+    [0, 1, 2].map((i) => rect(116 + i * 11, 67, 2, 2, ['#6EA8FF', '#F2C14E', '#7CC47F'][i])).join('')
+  const candle = rect(127, 52, 4, 14, '#6EA8FF') + rect(127, 55, 4, 2, '#FFFFFF') + rect(127, 60, 4, 2, '#FFFFFF') + rect(128.4, 49, 1.2, 3, INK)
+  const flame = wrap(wrap(poly('-3,0 0,-9 3,0', '#F28C28') + poly('-1.5,0 0,-5 1.5,0', '#FFD34D'), '', anim('scale', 0.2, [[0, '1 1'], [0.1, '.85 1.15', 'sio'], [0.2, '1 1', 'sio']])), 'translate(129 49)',
+    anim('opacity', D, [[0, '1'], [BLOW, '1'], [BLOW + 0.08, '0', 'lin'], [D, '0']], ONCE))
+  const smoke = wrap(rect(-1.5, -4, 3, 5, '#A8A49A') + rect(0, -9, 3, 4, '#A8A49A'), 'translate(129 47)',
+    anim('translate', D, [[0, '0 0'], [BLOW, '0 0'], [D, '3 -14', 'p2out']], ONCE), anim('opacity', D, [[0, '0'], [BLOW, '0'], [BLOW + 0.05, '.8', 'lin'], [D, '0', 'lin']], ONCE))
+  const puff = between([0, 1, 2].map((i) => rect(100 + i * 6, 26 + i * 4, 5, 2, '#E8E4DA', 'fill-opacity=".8"')).join(''), D, BLOW - 0.3, BLOW + 0.1)
+  return figure({
+    ownProps: true,
+    heldRaw: plate + sponge + candle + flame + smoke,
+    upper: [anim('translate', D, [[0, '0 0'], [BLOW - 0.6, '0 0'], [BLOW - 0.3, '-3 -2', 'p2out'], [BLOW, '4 2', 'p2in'], [BLOW + 0.3, '0 0', 'p2io'], [D, '0 0']], ONCE)],
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.4, '6 6', 'p2io'], [D - 0.3, '6 6'], [D, '0 0', 'p2io']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1.25 1.25'], [BLOW + 0.3, '1.25 1.25'], [BLOW + 0.45, '1 .35', 'p2io'], [D, '1 .35']], ONCE)],
+    },
+    props: puff,
+  })
+}
+
 // Drawing a chart: bars rise one by one on a whiteboard beside him while he points them out with a stick
 function chart() {
   const D = EVENT_SECONDS.chart
@@ -4055,6 +4293,18 @@ const LOOKS = {
   checkall,
   monday,
   weekend,
+  wonder,
+  thumbsup,
+  comfort,
+  heavybook,
+  shredder,
+  relabel,
+  download,
+  rewind,
+  drench,
+  medal,
+  welcomeback,
+  cake,
   chart,
   kanban,
   pet,
@@ -4082,7 +4332,7 @@ const LOOKS = {
 
 export const VECTOR_STATES = Object.keys(LOOKS)
 // The reactions to Claude Code's events: each has one version (no running one); the one-off ones play once and hold
-export const REACTIONS = ['permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog', 'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'chart', 'kanban', 'pet', 'grumpy', 'bow', 'party', 'longscroll', 'knock', 'whale', 'snake', 'ferris', 'erase', 'hatch', 'puff', 'wrench', 'multiarm', 'boxin', 'sweep', 'gears']
+export const REACTIONS = ['permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog', 'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'wonder', 'thumbsup', 'comfort', 'heavybook', 'shredder', 'relabel', 'download', 'rewind', 'drench', 'medal', 'welcomeback', 'cake', 'chart', 'kanban', 'pet', 'grumpy', 'bow', 'party', 'longscroll', 'knock', 'whale', 'snake', 'ferris', 'erase', 'hatch', 'puff', 'wrench', 'multiarm', 'boxin', 'sweep', 'gears']
 
 // extra.percent: how full the limit is, for the clock and the calendar
 export function figureFor(state, gait, extra = {}) {
