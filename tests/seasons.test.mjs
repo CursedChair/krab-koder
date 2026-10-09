@@ -393,3 +393,11 @@ test('new days: Holi, Nowruz, Towel Day, Juneteenth, Mexican Independence Day, T
   assert.equal(at('2018-09-21', ['GB']), 'summer', 'in 2018 it began on Sep 22, the Saturday after a Saturday the 15th')
   assert.equal(at('2018-09-22', ['GB']), 'oktoberfest')
 })
+
+test("a heat wave's blazing sun sets with the ordinary one: none at night, sunrise or sunset, still there by day", async () => {
+  const { scenesWithTime } = await import('../hooks/seasons.mjs')
+  const heat = ['scorcher', 'fire']
+  for (const hour of [23, 3, 7, 19]) assert.ok(!scenesWithTime(heat, hour).includes('scorcher'), `hour ${hour}`)
+  assert.ok(scenesWithTime(heat, 23).includes('fire'), 'the flames stay; only the sun goes')
+  assert.deepEqual(scenesWithTime(heat, 13), heat)
+})

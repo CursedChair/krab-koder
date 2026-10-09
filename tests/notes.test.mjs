@@ -27,7 +27,7 @@ test('the numbers in the notes are the real ones', () => {
 })
 
 test('each line of the "who wins" list wins over every line below it', () => {
-  assert.equal(PRIORITY.length, 12)
+  assert.equal(PRIORITY.length, 13)
   for (let i = 0; i < PRIORITY.length; i++) {
     assert.ok(PRIORITY[i].looks.includes(stateFor({ ...calm, ...PRIORITY[i].patch })), `${PRIORITY[i].name} on its own`)
     for (let j = i + 1; j < PRIORITY.length; j++) {

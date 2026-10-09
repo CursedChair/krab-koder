@@ -25,6 +25,8 @@ function harness({ store = {}, surface = 'desktop', columns = 64, web = null } =
   const $ = {
     command: { register: async () => {} },
     session: { id: async () => 'this-session' },
+    // A file whose path mentions 'existing' already exists; any other is new
+    fs: { exists: async (path) => String(path).includes('existing') },
     ...(web ? { http: { fetch: async (url) => web(url) } } : {}),
     clock: { every: (ms, fn) => timers.push(fn) },
     store: {
@@ -45,6 +47,7 @@ function harness({ store = {}, surface = 'desktop', columns = 64, web = null } =
         Text: (props) => ({ text: props.children[0] }),
         Svg: (props) => ({ svg: props.source, alt: props.alt, isInteractive: props.isInteractive }),
         Raster: (props) => ({ raster: props }),
+        Button: (props) => ({ button: props.key }),
       }),
     },
   }
@@ -64,6 +67,7 @@ function harness({ store = {}, surface = 'desktop', columns = 64, web = null } =
     for (const fn of timers) await fn()
   }
   const api = {
+    hooks,
     saved,
     invalidations,
     toasts,
@@ -77,7 +81,9 @@ function harness({ store = {}, surface = 'desktop', columns = 64, web = null } =
     start: () => fire('session.start', {}),
     async look() {
       const tree = await render()
-      const svg = tree.box.children[0].svg ?? ''
+      // His picture, wherever it sits in the band (it shares a frame with the heart)
+      const findSvg = (node) => node?.svg ?? (node?.box?.children ?? []).map(findSvg).find(Boolean)
+      const svg = findSvg(tree) ?? ''
       // On the desktop the readout is drawn inside the picture; its words are the text elements
       const words = [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1].replace(/&amp;/g, '&'))
       return { svg, line: words.join(' '), words, tree }
@@ -111,7 +117,7 @@ test('he draws on the desktop as an animated SVG and on the terminal as cells', 
   assert.match(svg, /^<svg /)
   assert.equal(line, 'waiting for the first reply')
   const tree = await desktop.render()
-  assert.equal(tree.box.children[0].isInteractive, true)
+  assert.equal(tree.box.children[0].box.children[0].isInteractive, true)
 
   const terminal = harness({ surface: 'terminal' })
   await terminal.start()
@@ -783,8 +789,11 @@ test('the work itself: tests passing and failing, a commit, a push and a web sea
   await h.fire('tool.call', { tool: 'Bash', input: { command: 'git push' } }, () => ({ result: { stdout: '', stderr: '' } }))
   assert.equal(await lookName(h), 'rocket')
   h.advance(5_000)
-  await h.fire('tool.call', { tool: 'WebSearch', input: { query: 'x' } }, () => ({ result: {} }))
+  await h.fire('tool.call', { tool: 'WebFetch', input: { url: 'https://example.com' } }, () => ({ result: {} }))
   assert.equal(await lookName(h), 'browse')
+  h.advance(5_000)
+  await h.fire('tool.call', { tool: 'WebSearch', input: { query: 'x' } }, () => ({ result: {} }))
+  assert.equal(await lookName(h), 'satellite')
 })
 
 test('the 100th message gets a trophy', async () => {
@@ -806,7 +815,7 @@ test('in a quiet spell he fidgets once before dozing off', async () => {
   assert.equal(await lookName(h), 'calm')
   h.advance(20_000)
   await h.tick()
-  assert.ok(FIDGETS.includes(await lookName(h)), 'a fidget')
+  assert.ok([...FIDGETS, 'sandwich'].includes(await lookName(h)), 'a fidget')
   h.advance(6_000)
   await h.tick()
   assert.equal(await lookName(h), 'calm', 'only once per quiet spell')
@@ -862,6 +871,14 @@ test('reactions to the work: a risky command, a code search, installing packages
   await h.fire('tool.call', { tool: 'Grep', input: { pattern: 'x' } }, () => ({ result: {} }))
   assert.equal(await lookName(h), 'magnify')
   h.advance(5_000)
+  await h.fire('tool.call', { tool: 'Read', input: { file_path: '/a.mjs' } }, () => ({ result: {} }))
+  assert.equal(await lookName(h), 'readfile')
+  h.advance(5_000)
+  await h.fire('tool.call', { tool: 'Read', input: { file_path: '/b.mjs' } }, () => ({ result: {} }))
+  assert.equal(await lookName(h), 'look', 'a second read soon after does not play the scroll again')
+  await h.fire('tool.call', { tool: 'mcp__blender__get_scene_info', input: {} }, () => ({ result: {} }))
+  assert.equal(await lookName(h), 'sculpt')
+  h.advance(5_000)
   await h.fire('tool.call', { tool: 'Bash', input: { command: 'npm install react' } }, () => ({ result: { stdout: '', stderr: '' } }))
   assert.equal(await lookName(h), 'unbox')
   h.advance(5_000)
@@ -870,4 +887,241 @@ test('reactions to the work: a risky command, a code search, installing packages
   h.advance(125_000)
   await h.tick()
   assert.equal(await lookName(h), 'tapfoot')
+})
+
+test('pressing the heart pets him, and too many pets in a row make him grumpy', async () => {
+  const h = harness()
+  await h.start()
+  await h.fire('ui.press', { element: 'krab-pet' })
+  assert.equal(await lookName(h), 'pet')
+  for (let i = 0; i < 3; i++) {
+    h.advance(500)
+    await h.fire('ui.press', { element: 'krab-pet' })
+  }
+  assert.equal(await lookName(h), 'grumpy')
+})
+
+test('a ping from Claude Code, a settings change, a new folder and a removed worktree each get a look', async () => {
+  const h = harness()
+  await h.start()
+  for (const [event, look] of [['classic.Notification', 'knock'], ['classic.ConfigChange', 'wrench'], ['classic.DirectoryAdded', 'boxin'], ['classic.WorktreeRemove', 'sweep']]) {
+    h.advance(5_000)
+    await h.fire(event, {})
+    assert.equal(await lookName(h), look, event)
+  }
+})
+
+// Runs the reply watcher over a made-up reply stream, returning what came out the other side and the step's result
+async function watchReply(h, chunks, e = { turnId: 't', index: 0 }) {
+  const hook = h.hooks.find((x) => x.event === 'turn.step')
+  async function* below() {
+    for (const chunk of chunks) yield chunk
+    return { stopReason: 'end_turn' }
+  }
+  const out = []
+  const stream = hook.fn({}, e, below)
+  while (true) {
+    const step = await stream.next()
+    if (step.done) return { out, result: step.value }
+    out.push(step.value)
+  }
+}
+
+test("the reply watcher passes every piece of Claude's reply through untouched, even odd ones", async () => {
+  const h = harness()
+  await h.start()
+  const chunks = [{ kind: 'engine', ref: 1 }, { kind: 'thinking', text: 'hmm' }, null, { kind: 'text', text: 'Hello' }, { kind: 'stop', stopReason: 'end_turn' }]
+  const { out, result } = await watchReply(h, chunks)
+  assert.deepEqual(out, chunks)
+  assert.deepEqual(result, { stopReason: 'end_turn' })
+})
+
+test('thinking with nothing written turns his gears; words stop them', async () => {
+  const h = harness()
+  await h.start()
+  await h.fire('turn.start', {})
+  const hook = h.hooks.find((x) => x.event === 'turn.step')
+  let release
+  const gate = new Promise((resolve) => (release = resolve))
+  async function* below() {
+    yield { kind: 'thinking', text: 'hmm' }
+    await gate
+    yield { kind: 'text', text: 'Here you go.' }
+    return {}
+  }
+  const stream = hook.fn({}, {}, below)
+  await stream.next()
+  h.advance(10_000)
+  assert.equal(await lookName(h), 'gears')
+  release()
+  await stream.next()
+  assert.notEqual(await lookName(h), 'gears')
+})
+
+test("a reply cut off for length makes him puff, and an apology makes him bow", async () => {
+  const h = harness()
+  await h.start()
+  await h.fire('turn.start', {})
+  await watchReply(h, [{ kind: 'text', text: 'and then' }, { kind: 'stop', stopReason: 'max_tokens' }])
+  assert.equal(await lookName(h), 'puff')
+  h.advance(5_000)
+  await h.fire('turn.start', {})
+  await watchReply(h, [{ kind: 'text', text: 'Sorry, my mistake.' }, { kind: 'stop', stopReason: 'end_turn' }])
+  assert.equal(await lookName(h), 'bow')
+})
+
+// ---- Every animation, from its real trigger ----
+// Each case starts a fresh session, does what Claude Code would do, and checks the look that shows right after.
+const ok = () => ({ ref: 1, result: { stdout: '', stderr: '' }, text: '' })
+const tool = (name, input = {}) => (h) => h.fire('tool.call', { tool: name, input }, ok)
+const say = (text, extra = {}) => (h) => h.fire('prompt.submit', { text, origin: { kind: 'composer' }, ...extra })
+const classic = (name, e = {}) => (h) => h.fire(`classic.${name}`, e)
+const reply = (chunks) => (h) => watchReply(h, chunks)
+const TRIGGERS = {
+  // Claude Code's own moments
+  glitch: classic('StopFailure'), stamp: classic('TaskCompleted'), house: classic('WorktreeCreate'), folder: classic('CwdChanged'),
+  // Only while Claude is idle (a file saved while Claude works was Claude's doing)
+  peek: async (h) => {
+    await h.fire('turn.complete', { reason: 'answer' })
+    h.advance(5_000)
+    await h.fire('classic.FileChanged', { file_path: '/project/notes.md', event: 'change' })
+  },
+  knock: classic('Notification', { notification_type: 'idle_prompt', message: 'Claude is waiting for your input' }),
+  wrench: classic('ConfigChange', { source: 'user_settings' }), boxin: classic('DirectoryAdded', { directory: '/other' }),
+  sweep: classic('WorktreeRemove', { worktree_path: '/wt' }),
+  pop: async (h) => {
+    await h.fire('classic.Stop', { background_tasks: [{ id: 'a' }] })
+    h.advance(1000)
+    await h.fire('classic.Stop', { background_tasks: [] })
+  },
+  // What you write
+  nervous: say('wtf why is this still broken'), mog: say('he is mogging'), blush: say('thanks!'), goodmorning: say('good morning!'), goodnight: say('gn'), flinch: say('WHY IS THIS NOT WORKING AT ALL'),
+  camera: say('look', { attachments: [{ type: 'image' }] }), listen: (h) => h.fire('prompt.submit', { text: 'hi', origin: { kind: 'bridge' } }),
+  // The tools Claude uses
+  readfile: tool('Read', { file_path: '/src/app.mjs' }), photo: tool('Read', { file_path: '/tmp/shot.png' }), todo: tool('TodoWrite'),
+  browser: tool('mcp__Claude_Browser__navigate', { url: 'https://example.com' }), mouseride: tool('mcp__Claude_Browser__computer', { action: 'left_click' }),
+  spellbook: tool('Skill'), toolbox: tool('ToolSearch'), alarm: tool('ScheduleWakeup'), binoculars: tool('Monitor'),
+  plugin: tool('mcp__slack__post_message'), inbox: tool('mcp__abc123__search_threads'), planner: tool('mcp__abc123__list_events'),
+  cabinet: tool('mcp__abc123__read_file_content'), clapper: tool('mcp__davinci-resolve__add_marker'), netcatch: tool('mcp__firecrawl__firecrawl_scrape'),
+  apptest: tool('mcp__Claude_Code_iOS_Simulator__control'), blocks: tool('mcp__21st__get_component'), highlight: tool('mcp__plugin_pdf-viewer_pdf__display_pdf'),
+  cube: tool('mcp__unreal__spawn_actor'), unity: tool('mcp__unityMCP__manage_scene'),
+  comb: tool('Bash', { command: 'npx eslint .' }), dig: tool('Bash', { command: 'psql -c "select 1"' }),
+  labcoat: tool('Edit', { file_path: '/app/cart.test.mjs', old_string: 'a', new_string: 'b' }), paint: tool('Edit', { file_path: '/app/site.css', old_string: 'a', new_string: 'b' }),
+  quill: tool('Edit', { file_path: '/README.md', old_string: 'a', new_string: 'b' }), redbutton: tool('Bash', { command: 'git push --force' }), chart: tool('mcp__visualize__show_widget'), sculpt: tool('mcp__blender__get_scene_info'),
+  kanban: tool('Bash', { command: 'python3 tools/kanban.py add Backlog "x"' }), whale: tool('Bash', { command: 'docker compose up -d' }),
+  snake: tool('Bash', { command: 'python3 scripts/report.py' }), ferris: tool('Bash', { command: 'cargo build' }),
+  erase: tool('Edit', { file_path: '/a.mjs', old_string: 'x\n'.repeat(30), new_string: 'y' }), hatch: tool('Write', { file_path: '/project/brand-new.mjs', content: 'x' }),
+  magnify: tool('Grep', { pattern: 'x' }), browse: tool('WebFetch', { url: 'https://example.com' }), satellite: tool('WebSearch', { query: 'x' }), present: tool('SendUserFile', { files: ['a.html'] }),
+  ship: tool('Bash', { command: 'git commit -m "x"' }), rocket: tool('Bash', { command: 'node --test tests/ && git commit -m x && git push' }),
+  mail: tool('Bash', { command: 'gh pr create --fill' }), unbox: tool('Bash', { command: 'npm install react' }), risky: tool('Bash', { command: 'rm -rf build' }),
+  // Claude's reply
+  party: reply([{ kind: 'text', text: 'All done! The tests pass.' }, { kind: 'stop', stopReason: 'end_turn' }]),
+  longscroll: reply([{ kind: 'text', text: 'x'.repeat(7000) }, { kind: 'stop', stopReason: 'end_turn' }]),
+  multiarm: reply([{ kind: 'tool', id: '1', name: 'Read' }, { kind: 'tool', id: '2', name: 'Grep' }, { kind: 'tool', id: '3', name: 'Glob' }, { kind: 'stop', stopReason: 'tool_use' }]),
+  bow: reply([{ kind: 'text', text: 'Sorry, my mistake.' }, { kind: 'stop', stopReason: 'end_turn' }]),
+  puff: reply([{ kind: 'text', text: 'and then' }, { kind: 'stop', stopReason: 'max_tokens' }]),
+  // Git trouble and deploys
+  armwrestle: (h) => h.fire('tool.call', { tool: 'Bash', input: { command: 'git merge main' } }, () => ({ ref: 1, isError: true, result: { stdout: 'CONFLICT (content): Merge conflict in a.js', stderr: '' }, text: '' })),
+  parachute: tool('Bash', { command: 'vercel deploy --prod' }),
+  // Friday afternoon (the session starts on a Wednesday at noon), while the deploy is still running
+  crossclaws: (h) => { h.advance(2 * 24 * 60 * 60 * 1000); return h.fire('tool.call', { tool: 'Bash', input: { command: 'vercel deploy --prod' } }, () => ({ deny: 'still running' })) },
+  // More of what you write and what Claude runs
+  laugh: say('lol'), onfire: say('this is 🔥'), brb: say('brb'), paperstack: say('x'.repeat(3_000)),
+  bricks: tool('Bash', { command: 'npm run build' }), detective: tool('Bash', { command: 'npm audit' }), rug: tool('Bash', { command: 'git stash' }),
+  signpost: tool('Bash', { command: 'git switch dev' }), checkall: tool('TodoWrite', { todos: [{ content: 'a', status: 'completed' }] }),
+  // The session starts on a Wednesday at noon: jump to the weekend, or to the next Monday morning
+  weekend: (h) => { h.advance(3 * 24 * 60 * 60 * 1000); return h.fire('prompt.submit', { text: 'ok', origin: { kind: 'composer' } }) },
+  monday: (h) => { h.advance((4 * 24 + 21) * 60 * 60 * 1000); return h.fire('prompt.submit', { text: 'ok', origin: { kind: 'composer' } }) },
+  // Petting him
+  pet: (h) => h.fire('ui.press', { element: 'krab-pet' }),
+}
+for (const [look, trigger] of Object.entries(TRIGGERS)) {
+  test(`${look} plays when its trigger happens`, async () => {
+    const h = harness()
+    await h.start()
+    h.advance(10_000)
+    await h.fire('turn.start', {})
+    await trigger(h)
+    assert.equal(await lookName(h), look)
+  })
+}
+
+test('two hours of steady work earns a sip of water and a stretch, once; a real break starts the count again', async () => {
+  const h = harness()
+  await h.start()
+  // He dozes off between messages, so each reaction plays once he has woken up
+  const say = async (text) => { await h.fire('prompt.submit', { text, origin: { kind: 'composer' } }); h.advance(2_000) }
+  for (let minutes = 10; minutes < 120; minutes += 10) {
+    h.advance(10 * 60 * 1000)
+    await say('next step')
+    assert.notEqual(await lookName(h), 'water', `not yet at ${minutes} minutes`)
+  }
+  h.advance(10 * 60 * 1000)
+  await say('next step')
+  assert.equal(await lookName(h), 'water')
+  h.advance(10 * 60 * 1000)
+  await say('next step')
+  assert.notEqual(await lookName(h), 'water', 'only once per two hours')
+  // A 20-minute break, then work again: the count starts over
+  h.advance(20 * 60 * 1000)
+  await say('back')
+  h.advance(10 * 60 * 1000)
+  await say('next step')
+  assert.notEqual(await lookName(h), 'water')
+})
+
+test('in a quiet spell around lunch he eats a sandwich', async () => {
+  const h = harness()
+  await h.start()
+  await h.fire('prompt.submit', { text: 'hi' })
+  h.advance(30_000)
+  await h.tick()
+  assert.equal(await lookName(h), 'sandwich')
+})
+
+test('the late-night yawn plays for a message sent between 1 and 5 in the morning', async () => {
+  const h = harness()
+  await h.start()
+  const twoAm = new Date(Date.now())
+  twoAm.setHours(26, 0, 0, 0)
+  h.advance(twoAm.getTime() - Date.now())
+  await h.fire('prompt.submit', { text: 'one more thing', origin: { kind: 'composer' } })
+  // He was asleep, so he wakes up first, then yawns
+  assert.equal(await lookName(h), 'wake')
+  h.advance(1_600)
+  assert.equal(await lookName(h), 'yawn')
+})
+
+test('a reaction that wakes him plays in full once he has woken up', async () => {
+  const h = harness()
+  await h.start()
+  h.advance(10 * 60_000)
+  await h.fire('prompt.submit', { text: 'thanks!', origin: { kind: 'composer' } })
+  assert.equal(await lookName(h), 'wake')
+  h.advance(1_600)
+  assert.equal(await lookName(h), 'blush')
+  h.advance(2_000)
+  assert.equal(await lookName(h), 'blush', 'the whole blush still plays after the wake-up')
+})
+
+test('writing over a file that already exists does not hatch an egg', async () => {
+  const h = harness()
+  await h.start()
+  h.advance(10_000)
+  await h.fire('turn.start', {})
+  await h.fire('tool.call', { tool: 'Write', input: { file_path: '/project/existing.mjs', content: 'x' } }, ok)
+  assert.notEqual(await lookName(h), 'hatch')
+})
+
+test('on the desktop the heart sits just after the corner tag, placed in whole text cells', async () => {
+  for (const sessions of [1, 3]) {
+    const h = harness()
+    await h.start()
+    const { tree } = await h.look()
+    const heart = tree.box.children[0].box.children.find((c) => c.box?.position === 'absolute').box
+    assert.equal(heart.children[0].button, 'krab-pet')
+    // A fraction here makes the desktop app throw out the whole band, so he would vanish
+    assert.ok(Number.isInteger(heart.top) && Number.isInteger(heart.left), `whole cells (${heart.top}, ${heart.left})`)
+    assert.ok(heart.left >= 0)
+  }
 })

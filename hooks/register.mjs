@@ -2,18 +2,18 @@
 // your context window and plan usage by how he acts.
 // It only draws and watches events: no network, no files, no processes.
 import { dueAlert, FIVE_HOUR, findLimit, limitWarning, percentBucket, rememberReading, resetThatEnded, WEEK } from './limits.mjs'
-import { ALERT_MS, COMPACT_MAX_MS, createLife, EVENT_MS, FLAG_MS, GYM_MS, modelNote, modelSwitchLook, moodFor, poseFor, readout, SLEEP_AFTER_MS, stateFor, stepLife, TICK_MS } from './life.mjs'
+import { ALERT_MS, COMPACT_MAX_MS, createLife, EVENT_MS, FLAG_MS, GYM_MS, modelNote, modelSwitchLook, moodFor, poseFor, readout, SLEEP_AFTER_MS, stateFor, stepLife, TICK_MS, WAKE_MS } from './life.mjs'
 import { chipsFor, chipsText } from './chips.mjs'
 import { cellNumbers, packCells, pixelsFor, SPRITE_COLUMNS, SPRITE_ROWS } from './sprite.mjs'
 import { OUTFIT_IDS } from './outfits.mjs'
 import { airUrl, geocodeUrl, KP_URL, parseAir, parseKp, parsePlace, parseWeather, scenesWithWeather, TRIAL, weatherOutfit, weatherUrl } from './weather.mjs'
 import { PERSONAL } from './personal.mjs'
 import { DAY_COMMANDS, DAY_NAMES, monthDayWords, parseCoordinates, parseMonthDay, parseRegions } from './settings.mjs'
-import { attachmentReaction, commandReaction, FIDGETS, isLateNight, isTestCommand, LONG_TURN_MS, MILESTONES, messageReaction, startReaction } from './work.mjs'
+import { attachmentReaction, BREAK_GAP_MS, BREAK_REMINDER_MS, commandReaction, fileLook, isLateNight, isMondayMorning, isWeekend, isTestCommand, LONG_TURN_MS, MILESTONES, LONG_REPLY_CHARS, messageReaction, pickFidget, replyReaction, startReaction, toolReaction } from './work.mjs'
 import { outfitFor, REGION_CODES, scenesWithLife, scenesWithSky, scenesWithTime, seasonFor, skyEvents } from './seasons.mjs'
 import { SEASON_SCENES } from './scenery.mjs'
 import { OUTFITS } from './outfits.mjs'
-import { bandLayout, HELPER_LEAVE_SECONDS, SIZES } from './vector.mjs'
+import { bandLayout, COLUMN_PX, HELPER_LEAVE_SECONDS, SIZES } from './vector.mjs'
 
 const MIN_EXTRA_COLUMNS = 4
 // He stays where he is: the same spot, a little in from the left edge, and only does his animations
@@ -24,7 +24,18 @@ const OOPS_EVERY_MS = 15_000
 const FIDGET_AFTER_MS = 25_000
 // Searches in a row get the laptop once
 const SEARCH_EVERY_MS = 10_000
-const SEARCH_TOOLS = new Set(['WebSearch', 'WebFetch'])
+// How much of Claude's reply to keep for reacting to it, and how many tools at once sprout extra arms
+const REPLY_KEEP_CHARS = 4_000
+const MANY_TOOLS = 3
+// Pets this close together count as one petting spree; this many in a spree make him grumpy
+const PET_SPREE_MS = 8_000
+// The heart button's name
+const PET_KEY = 'krab-pet'
+const GRUMPY_AFTER = 4
+// A web search gets the satellite dish (its tool look); opening a page gets the laptop
+const SEARCH_TOOLS = new Set(['WebFetch'])
+// Looks for the kind of file being edited come round less often, since edits come thick and fast
+const FILE_LOOK_EVERY_MS = 60_000
 const CODE_SEARCH_TOOLS = new Set(['Grep', 'Glob'])
 // Only messages you sent yourself (typed, or from your phone) get a reaction to their words
 const YOUR_MESSAGES = new Set(['composer', 'bridge'])
@@ -147,6 +158,9 @@ export function register(on) {
   let runningTasks = 0
   let bandColumns = 0
   let lastActivityAt = Date.now()
+  // When this stretch of work began (after a quiet gap long enough to count as a break), and when he last suggested one
+  let stretchStartAt = Date.now()
+  let breakSuggestedAt = 0
   let doneAt = 0
   let wakeAt = 0
   // When the reply-ready picture was drawn: its throws run from then, so it hands over to the idle look at the end of a loop
@@ -208,10 +222,21 @@ export function register(on) {
   let fidgetFor = 0
   let lastSearchAt = 0
   let lastCodeSearchAt = 0
+  // When each tool look last played, so a run of file reads shows the scroll now and then rather than every time
+  const toolLookAt = {}
+  // When Claude started thinking (in this model request, before any words or tools), or 0
+  let thinkingSince = 0
+  // What Claude has written this turn, for reacting to it at the end (only the last part is kept)
+  let replyText = ''
+  let replyLength = 0
+  // Pets in a row: a few pets are nice, too many make him grumpy
+  let petTimes = []
   // When this reply started, whether he has tapped his foot at it yet, and the night he last yawned at
   let turnStartAt = 0
   let hasTappedThisTurn = false
   let yawnedFor = ''
+  // The day he last did his Monday-morning drag or his weekend lounge
+  let weekdayFor = ''
   // Helper agents working right now, and when the last one finished (it waves goodbye)
   let helpers = []
   let helperLeftAt = 0
@@ -258,9 +283,36 @@ export function register(on) {
   const windNow = () => (outfitChoice === 'off' ? 0 : weatherNow()?.wind ?? 0)
 
   // A one-off reaction starts now (or at a given time); it wakes him up
+  // Something that wakes him plays once he has finished waking up, so the wake-up does not hide it
   const play = (name, at = Date.now()) => {
-    eventAt = { ...eventAt, [name]: at }
     touch()
+    const awake = wakeAt + WAKE_MS
+    eventAt = { ...eventAt, [name]: Date.now() < awake ? Math.max(at, awake) : at }
+  }
+  // One piece of Claude's reply as it streams: thinking starts his gears, words and tools stop them,
+  // several tools in one go sprout extra arms, and how the reply ends picks his reaction to it. Returns the step's tool count.
+  const noticeChunk = (chunk, tools) => {
+    if (chunk?.kind === 'thinking') {
+      if (!thinkingSince) thinkingSince = Date.now()
+      return tools
+    }
+    if (chunk?.kind === 'text') {
+      thinkingSince = 0
+      replyText = (replyText + chunk.text).slice(-REPLY_KEEP_CHARS)
+      replyLength += chunk.text.length
+      return tools
+    }
+    if (chunk?.kind === 'tool') {
+      thinkingSince = 0
+      if (tools + 1 === MANY_TOOLS) play('multiarm')
+      return tools + 1
+    }
+    if (chunk?.kind === 'stop') {
+      thinkingSince = 0
+      const reaction = chunk.stopReason === 'max_tokens' ? 'puff' : chunk.stopReason === 'end_turn' ? replyReaction(replyText, replyLength) : null
+      if (reaction) play(reaction)
+    }
+    return tools
   }
   // Claude Code says which permission mode is on with each of its events; a change plays that mode's reaction
   const noteMode = (e) => {
@@ -293,6 +345,7 @@ export function register(on) {
   const touch = () => {
     const now = Date.now()
     if (isAsleepAt(now)) wakeAt = now
+    if (now - lastActivityAt >= BREAK_GAP_MS) stretchStartAt = now
     lastActivityAt = now
   }
 
@@ -323,6 +376,7 @@ export function register(on) {
       doneAgeMs: now - (doneShownAt >= doneAt ? doneShownAt : doneAt),
       wakeAgeMs: now - wakeAt,
       waiting,
+      thinkingMs: thinkingSince ? now - thinkingSince : 0,
       events: Object.fromEntries(Object.entries(eventAt).map(([name, at]) => [name, now - at])),
     }
   }
@@ -518,7 +572,7 @@ export function register(on) {
       const quietMs = Date.now() - lastActivityAt
       if (!isTurnRunning && !waiting && runningTasks === 0 && quietMs > FIDGET_AFTER_MS && quietMs < SLEEP_AFTER_MS && fidgetFor !== lastActivityAt) {
         fidgetFor = lastActivityAt
-        eventAt = { ...eventAt, [FIDGETS[Math.floor(Math.random() * FIDGETS.length)]]: Date.now() }
+        eventAt = { ...eventAt, [pickFidget(new Date(Date.now()))]: Date.now() }
       }
       const ctx = contextNow()
       life = stepLife(life, {
@@ -700,6 +754,39 @@ export function register(on) {
     $.ui.invalidate('ui.render')
     return next(e)
   })
+  // Claude Code pings you because it is waiting: he knocks on the inside of your screen
+  on('classic.Notification', async ($, e, next) => {
+    play('knock')
+    $.ui.invalidate('ui.render')
+    return next(e)
+  })
+  // You changed a setting: he tightens a bolt on himself
+  on('classic.ConfigChange', async ($, e, next) => {
+    play('wrench')
+    $.ui.invalidate('ui.render')
+    return next(e)
+  })
+  // A folder added to the session: he carries a box in
+  on('classic.DirectoryAdded', async ($, e, next) => {
+    play('boxin')
+    $.ui.invalidate('ui.render')
+    return next(e)
+  })
+  // A worktree removed: he sweeps up
+  on('classic.WorktreeRemove', async ($, e, next) => {
+    play('sweep')
+    $.ui.invalidate('ui.render')
+    return next(e)
+  })
+  // You pressed the heart beside him: a big hand pets him; too many pets in a row and he gets grumpy
+  on('ui.press', async ($, e, next) => {
+    if (e.element !== PET_KEY) return next(e)
+    const now = Date.now()
+    petTimes = [...petTimes.filter((at) => now - at < PET_SPREE_MS), now]
+    play(petTimes.length >= GRUMPY_AFTER ? 'grumpy' : 'pet')
+    $.ui.invalidate('ui.render')
+    return { element: e.element }
+  })
   // The session moved to another folder: he jumps into a folder and drops back from the sky
   on('classic.CwdChanged', async ($, e, next) => {
     play('folder')
@@ -750,8 +837,14 @@ export function register(on) {
     if (MILESTONES.has(await countMessage($))) play('trophy')
     else if (isYours) {
       const reaction = attachmentReaction(e.attachments) ?? (e.origin?.kind === 'bridge' ? 'listen' : null) ?? messageReaction(e.text) ??
-        (isLateNight(now.getHours()) && yawnedFor !== night ? 'yawn' : null)
+        (isLateNight(now.getHours()) && yawnedFor !== night ? 'yawn' : null) ??
+        // Once a day: the first message on a Monday morning, or on a weekend day
+        (isMondayMorning(now) && weekdayFor !== night ? 'monday' : null) ??
+        (isWeekend(now) && weekdayFor !== night ? 'weekend' : null) ??
+        (Date.now() - Math.max(stretchStartAt, breakSuggestedAt) >= BREAK_REMINDER_MS ? 'water' : null)
       if (reaction === 'yawn') yawnedFor = night
+      if (reaction === 'monday' || reaction === 'weekend') weekdayFor = night
+      if (reaction === 'water') breakSuggestedAt = Date.now()
       if (reaction) play(reaction)
     }
     // Anything still marked as waiting on you is over once you send a prompt
@@ -765,17 +858,38 @@ export function register(on) {
     hasTappedThisTurn = false
     isTurnRunning = true
     lastTool = null
+    replyText = ''
+    replyLength = 0
     return next(e)
   })
 
   on('turn.complete', async ($, e, next) => {
     isTurnRunning = false
+    thinkingSince = 0
     waiting = null
     doneAt = Date.now()
     touch()
     // You stopped Claude mid-reply: he jumps
     if (e.reason === 'aborted') play('startled')
     return next(e)
+  })
+
+  // Watching Claude's reply stream past, without changing it: how long it thinks, what it writes, and how the reply ends.
+  // Every piece is passed straight on; the watching is wrapped so a mistake here can never hold up the reply.
+  on('turn.step', async function* ($, e, next) {
+    const isMain = !e.agentId
+    let toolsThisStep = 0
+    const stream = next(e)[Symbol.asyncIterator]()
+    while (true) {
+      const step = await stream.next()
+      if (step.done) return step.value
+      try {
+        if (isMain) toolsThisStep = noticeChunk(step.value, toolsThisStep)
+      } catch {
+        // Only his reactions are lost; the reply goes on
+      }
+      yield step.value
+    }
   })
 
   on('tool.call', async ($, e, next) => {
@@ -797,10 +911,30 @@ export function register(on) {
       $.ui.invalidate('ui.render')
     }
     // Searching the code, or a command worth being nervous about, gets its reaction as it starts
-    const atStart = CODE_SEARCH_TOOLS.has(e.tool) ? 'magnify' : e.tool === 'Bash' ? startReaction(e.input?.command) : null
-    if (atStart === 'risky' || (atStart === 'magnify' && Date.now() - lastCodeSearchAt > SEARCH_EVERY_MS)) {
+    const atStart = CODE_SEARCH_TOOLS.has(e.tool) ? 'magnify' : e.tool === 'Bash' ? startReaction(e.input?.command, new Date(Date.now())) : null
+    if ((atStart && atStart !== 'magnify') || (atStart === 'magnify' && Date.now() - lastCodeSearchAt > SEARCH_EVERY_MS)) {
       if (atStart === 'magnify') lastCodeSearchAt = Date.now()
       play(atStart)
+      $.ui.invalidate('ui.render')
+    }
+    // A file that does not exist yet: he hatches it from an egg
+    let hatched = false
+    if (e.tool === 'Write' && typeof e.input?.file_path === 'string' && Date.now() - (toolLookAt.hatch ?? 0) > SEARCH_EVERY_MS) {
+      // If the check fails for any reason, no egg: better to miss one than to hatch a file that was already there
+      const isNew = await Promise.resolve().then(() => $.fs.exists(e.input.file_path)).then((found) => found === false, () => false)
+      if (isNew) {
+        toolLookAt.hatch = Date.now()
+        hatched = true
+        play('hatch')
+        $.ui.invalidate('ui.render')
+      }
+    }
+    // Reading, the to-do list, skills, the browser, connected apps: each has a look of its own
+    const toolLook = hatched ? null : toolReaction(e.tool, e.input)
+    const every = toolLook && toolLook === fileLook(e.input?.file_path) ? FILE_LOOK_EVERY_MS : SEARCH_EVERY_MS
+    if (toolLook && Date.now() - (toolLookAt[toolLook] ?? 0) > every) {
+      toolLookAt[toolLook] = Date.now()
+      play(toolLook)
       $.ui.invalidate('ui.render')
     }
     let result
@@ -943,12 +1077,15 @@ export function register(on) {
     return { text: isEnabled ? 'Krab is on' : 'Krab is off' }
   })
 
+  // The little heart beside him: pressing it pets him
+  const petButton = (Button) => Button({ key: PET_KEY, label: '♥', plain: true, dimColor: true, onPress: () => {} })
+
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const columns = e.props.bodyColumns
     bandColumns = columns ?? 0
     if (!isEnabled || !columns || columns < SPRITE_COLUMNS + MIN_EXTRA_COLUMNS) return next(e)
 
-    const { Box, Text, Svg, Raster } = $.ui.resolve(e)
+    const { Box, Text, Svg, Raster, Button } = $.ui.resolve(e)
     surface = e.surface
     const ctx = contextNow()
     const others = await next(e)
@@ -968,7 +1105,7 @@ export function register(on) {
           }),
           Box({
             flexDirection: 'row',
-            children: readout.map((part, i) => Text({ key: `readout-${i}`, children: [part.text], color: part.color, dimColor: part.dim === true })),
+            children: [...readout.map((part, i) => Text({ key: `readout-${i}`, children: [part.text], color: part.color, dimColor: part.dim === true })), petButton(Button)],
           }),
           ...rest,
         ],
@@ -977,15 +1114,24 @@ export function register(on) {
 
     // On the desktop the readout is part of the drawing, so he stands right on top of it
     const layout = desktopLayout(ctx)
+    // The heart sits on the drawing, just after the corner tag with the time and the little session Clawds.
+    // A floating box is placed in whole text cells (a fraction makes the app throw the whole band out), and a column is COLUMN_PX wide
+    const heartColumn = layout.hudEnd ? Math.ceil(layout.hudEnd / COLUMN_PX) + 1 : 0
     return Box({
       flexDirection: 'column',
       children: [
-        Svg({
-          source: layout.svg,
-          alt: `Krab Koder, a crab mascot. ${readout(snapshot)}`,
-          isInteractive: true,
-          width: layout.width,
-          height: layout.height,
+        Box({
+          position: 'relative',
+          children: [
+            Svg({
+              source: layout.svg,
+              alt: `Krab Koder, a crab mascot. ${readout(snapshot)}`,
+              isInteractive: true,
+              width: layout.width,
+              height: layout.height,
+            }),
+            Box({ position: 'absolute', top: 0, left: heartColumn, children: [petButton(Button)] }),
+          ],
         }),
         ...rest,
       ],

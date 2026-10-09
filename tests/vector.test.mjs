@@ -440,9 +440,10 @@ test("Valentine's Day gives him beating heart eyes, in every look, and only that
   assert.ok(!figureFor('calm', 'idle', { outfit: 'witch' }).includes('1.14 1.14'))
 })
 
-test('graduation: the gown and cap come with him in every look except the gym, the gown stays off his hands and below his eyes', async () => {
+test('graduation: the gown and cap come with him in every look except the gym and the mog close-up, the gown stays off his hands and below his eyes', async () => {
   const { VECTOR_STATES } = await import('../hooks/vector.mjs')
-  for (const state of VECTOR_STATES.filter((name) => name !== 'gym')) {
+  // In the mog close-up his whole body is his face, so the clothes come off (the cap stays)
+  for (const state of VECTOR_STATES.filter((name) => name !== 'gym' && name !== 'mog')) {
     const drawing = figureFor(state, 'idle', { outfit: 'graduation' })
     assert.ok(drawing.includes('#1D212B'), `${state}: the gown is drawn`)
   }
@@ -521,4 +522,14 @@ test('background task: in the morning he holds a coffee and sips it, the rest of
   assert.ok(morning.includes('#5A3A22'), 'the coffee is drawn')
   assert.ok(!later.includes('#5A3A22'), 'no coffee outside the morning')
   assert.ok(morning.includes('#D97757') && later.includes('#D97757'), 'the spark shows either way')
+})
+
+test('mogging: the clothes and any mask come off so his whole mogging face shows; a plain hat stays', async () => {
+  const bare = figureFor('mog', 'idle')
+  assert.ok(!figureFor('mog', 'idle', { outfit: 'graduation' }).includes('#1D212B'), 'no gown')
+  assert.ok(figureFor('mog', 'idle', { outfit: 'witch' }).length > bare.length, 'the witch hat stays')
+  const { OUTFITS } = await import('../hooks/outfits.mjs')
+  for (const masked of ['friday13', 'skeleton', 'mummy', 'dayofdead']) {
+    assert.ok(!figureFor('mog', 'idle', { outfit: masked }).includes(OUTFITS[masked].head), `${masked}: the mask is off`)
+  }
 })

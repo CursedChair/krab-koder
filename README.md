@@ -25,7 +25,7 @@
   <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-d97757">
   <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757">
   <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-none-3fa34d">
-  <img alt="51 reactions" src="https://img.shields.io/badge/reactions-51-8fc7f2">
+  <img alt="134 reactions" src="https://img.shields.io/badge/reactions-134-8fc7f2">
   <img alt="80 outfits" src="https://img.shields.io/badge/outfits-80-f2c230">
 </p>
 
@@ -35,7 +35,7 @@
 
 ## 🦀 He reacts to Claude's work
 
-51 reactions in all. These are the ones you'll see every day:
+134 reactions in all, from the tools and apps Claude uses (web searches, builds, deploys, databases, Blender, Unity and more) to what you write ("gm", "lol", 🔥) and the time of the week. These are the ones you'll see every day:
 
 <table>
   <tr>

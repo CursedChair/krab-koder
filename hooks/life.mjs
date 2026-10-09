@@ -11,6 +11,8 @@ export const GYM_MS = 5_700
 export const FLAG_MS = 8_800
 export const ALERT_MS = 7_000
 export const BEDTIME_MS = 2_400
+// Claude thinking this long before it says or does anything: gears turn over his head
+export const GEARS_MS = 8_000
 // Safety stop: if the end of a compaction is never heard, he stops crumpling after this long
 export const COMPACT_MAX_MS = 120_000
 
@@ -49,6 +51,70 @@ export const EVENT_MS = {
   risky: 2_800,
   listen: 3_200,
   mog: 4_000,
+  readfile: 3_200,
+  photo: 3_000,
+  todo: 3_200,
+  browser: 3_400,
+  mouseride: 3_600,
+  spellbook: 3_600,
+  toolbox: 3_600,
+  alarm: 3_400,
+  binoculars: 3_200,
+  plugin: 3_000,
+  sculpt: 4_200,
+  inbox: 3_400,
+  planner: 3_200,
+  cabinet: 3_200,
+  clapper: 3_000,
+  netcatch: 3_200,
+  apptest: 3_200,
+  blocks: 3_400,
+  highlight: 3_000,
+  cube: 3_200,
+  unity: 3_600,
+  goodmorning: 3_400,
+  goodnight: 3_800,
+  satellite: 3_400,
+  armwrestle: 3_600,
+  redbutton: 3_400,
+  comb: 3_600,
+  dig: 3_800,
+  parachute: 3_800,
+  labcoat: 3_400,
+  paint: 3_400,
+  quill: 3_600,
+  water: 4_600,
+  sandwich: 4_200,
+  crossclaws: 3_400,
+  laugh: 3_600,
+  onfire: 3_400,
+  brb: 3_200,
+  paperstack: 3_600,
+  bricks: 3_800,
+  detective: 3_600,
+  rug: 3_800,
+  signpost: 3_600,
+  checkall: 3_200,
+  monday: 4_000,
+  weekend: 3_800,
+  chart: 3_000,
+  kanban: 3_200,
+  pet: 3_200,
+  grumpy: 3_000,
+  bow: 2_800,
+  party: 3_000,
+  longscroll: 3_600,
+  knock: 2_600,
+  whale: 3_600,
+  snake: 3_200,
+  ferris: 3_200,
+  erase: 3_000,
+  hatch: 3_400,
+  puff: 3_000,
+  wrench: 3_000,
+  multiarm: 3_200,
+  boxin: 3_000,
+  sweep: 3_200,
   pop: 2_600,
   oops: 2_800,
   glitch: 4_000,
@@ -149,10 +215,12 @@ export const SINGLE_LOOKS = new Set(['gym', 'flag', 'bedtime', 'compact', 'limit
 export const STATES = ['calm', 'tired', 'strained', 'critical', 'think', 'edit', 'shell', 'look', 'done', 'task', 'compact', 'asleep', 'bedtime', 'gym', 'flag', 'clock', 'calendar', 'limit',
   'permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow',
   'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch',
-  'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog']
+  'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog',
+  'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'chart', 'kanban',
+  'pet', 'grumpy', 'bow', 'party', 'longscroll', 'knock', 'whale', 'snake', 'ferris', 'erase', 'hatch', 'puff', 'wrench', 'multiarm', 'boxin', 'sweep', 'gears']
 
 // ctx: { mood, turnRunning, asleep, sleepAgeMs, tool, toolAgeMs, doneAgeMs, wakeAgeMs, gymAgeMs, flagAgeMs, alertAgeMs,
-//        alertState, limit, waiting, events }
+//        alertState, limit, waiting, events, thinkingMs }
 // waiting: 'permission' | 'asking' while Claude waits on your answer, else null
 // events: { hello, bye, ... } how long ago each one-off reaction started (missing or negative: not playing)
 // limit: { state: 'clock' | 'calendar', percent } when a plan limit is near, else null
@@ -178,6 +246,7 @@ export function stateFor(ctx) {
   // A nearly spent limit outranks a nearly full context: /compact can fix one but not the other
   const isLimitUrgent = Boolean(ctx.limit) && ctx.limit.percent >= 95
   if (ctx.mood === 'critical' && !isLimitUrgent) return 'critical'
+  if (ctx.turnRunning && ctx.thinkingMs >= GEARS_MS) return 'gears'
   const isToolActive = Boolean(ctx.tool) && ctx.toolAgeMs < TOOL_MS
   if (ctx.turnRunning && isToolActive) return toolKind(ctx.tool)
   if (ctx.turnRunning) return 'think'

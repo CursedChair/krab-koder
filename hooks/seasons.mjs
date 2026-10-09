@@ -297,14 +297,16 @@ export function timeOfDay(hour) {
   return null
 }
 
-// A day's scenes with the sky of the hour added behind them. The daytime sun (and the summer one) steps aside, since the sky is not daytime.
+// A day's scenes with the sky of the hour added behind them. The daytime sun (the summer one, and a heat wave's blazing one)
+// steps aside, since the sky is not daytime.
+const DAYTIME_SUNS = new Set(['sun', 'summer', 'scorcher'])
 export function scenesWithTime(scenes, hour) {
   const time = timeOfDay(hour)
   const base = scenes ?? []
   if (time === null) return base
   // Eid's crescent brings its own stars, so the ordinary moon stays away
   if (time === 'night' && base.includes('crescent')) return base
-  const kept = base.filter((id) => id !== 'sun' && id !== 'summer')
+  const kept = base.filter((id) => !DAYTIME_SUNS.has(id))
   if (base.includes('summer')) kept.push('clouds')
   return [time, ...new Set(kept)]
 }
