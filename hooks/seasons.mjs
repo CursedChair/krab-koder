@@ -298,15 +298,16 @@ export function timeOfDay(hour) {
 }
 
 // A day's scenes with the sky of the hour added behind them. The daytime sun (the summer one, and a heat wave's blazing one)
-// steps aside, since the sky is not daytime.
+// steps aside, since the sky is not daytime. And the other way round: a costume's night sky (a vampire's moon and stars)
+// steps aside by day whenever a sun is out, and at sunrise and sunset, so the sun and the moon never share the sky.
 const DAYTIME_SUNS = new Set(['sun', 'summer', 'scorcher'])
 export function scenesWithTime(scenes, hour) {
   const time = timeOfDay(hour)
   const base = scenes ?? []
-  if (time === null) return base
+  if (time === null) return base.some((id) => DAYTIME_SUNS.has(id)) ? base.filter((id) => id !== 'night') : base
   // Eid's crescent brings its own stars, so the ordinary moon stays away
   if (time === 'night' && base.includes('crescent')) return base
-  const kept = base.filter((id) => !DAYTIME_SUNS.has(id))
+  const kept = base.filter((id) => !DAYTIME_SUNS.has(id) && (time === 'night' || id !== 'night'))
   if (base.includes('summer')) kept.push('clouds')
   return [time, ...new Set(kept)]
 }

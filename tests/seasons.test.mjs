@@ -401,3 +401,12 @@ test("a heat wave's blazing sun sets with the ordinary one: none at night, sunri
   assert.ok(scenesWithTime(heat, 23).includes('fire'), 'the flames stay; only the sun goes')
   assert.deepEqual(scenesWithTime(heat, 13), heat)
 })
+
+test('a costume\'s night sky gives way to the sun: by day when a sun is out, and at sunrise and sunset', async () => {
+  const { scenesWithTime } = await import('../hooks/seasons.mjs')
+  assert.deepEqual(scenesWithTime(['night', 'bats', 'sun'], 13), ['bats', 'sun'], 'a sunny Halloween afternoon')
+  assert.deepEqual(scenesWithTime(['night', 'bats'], 13), ['night', 'bats'], 'no sun out: the spooky sky stays')
+  assert.ok(!scenesWithTime(['night', 'bats'], 7).includes('night'), 'sunrise')
+  assert.ok(!scenesWithTime(['night', 'bats'], 19).includes('night'), 'sunset')
+  assert.ok(scenesWithTime(['night', 'bats'], 23).includes('night'), 'at night the moon stays')
+})
