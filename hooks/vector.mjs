@@ -25,7 +25,7 @@ export const COLUMN_PX = 8
 // pole is taller, so the flag gets a taller picture while it plays.
 export const TOP = -46
 export const TOP_TALL = -74
-const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy', 'startled', 'unbox', 'mail', 'music', 'blush', 'listen', 'mog', 'pet', 'grumpy', 'gears', 'party', 'longscroll', 'whale', 'knock', 'browser', 'mouseride', 'spellbook', 'toolbox', 'inbox', 'planner', 'cabinet', 'netcatch', 'cube', 'goodmorning', 'goodnight', 'satellite', 'comb', 'parachute', 'water', 'crossclaws', 'laugh', 'brb', 'paperstack', 'monday', 'wonder', 'drench', 'medal', 'welcomeback'])
+const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy', 'startled', 'unbox', 'mail', 'music', 'blush', 'listen', 'mog', 'pet', 'grumpy', 'gears', 'party', 'longscroll', 'whale', 'knock', 'browser', 'mouseride', 'spellbook', 'toolbox', 'inbox', 'planner', 'cabinet', 'netcatch', 'cube', 'goodmorning', 'goodnight', 'satellite', 'comb', 'parachute', 'water', 'crossclaws', 'laugh', 'brb', 'paperstack', 'monday', 'wonder', 'drench', 'medal', 'welcomeback', 'pacewarn', 'scared'])
 export const topFor = (state) => (TALL_LOOKS.has(state) ? TOP_TALL : TOP)
 export const SPRITE_UNITS = 107
 
@@ -3718,6 +3718,145 @@ function cake() {
   })
 }
 
+// ---- The weekly pace warning: in glasses, he points a meter stick at a whiteboard chart of your week ----
+
+// A straight line between two points, as a thin turned rectangle
+function segment(x0, y0, x1, y1, width, fill) {
+  const len = Math.hypot(x1 - x0, y1 - y0)
+  const deg = n((Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI)
+  return wrap(rect(0, -width / 2, n(len), width, fill), `translate(${n(x0)} ${n(y0)}) rotate(${deg})`)
+}
+// A dashed line: short segments with gaps, every `step` units along it
+function dashes(x0, y0, x1, y1, width, fill, step = 4) {
+  const len = Math.hypot(x1 - x0, y1 - y0)
+  const count = Math.max(1, Math.floor(len / step))
+  return Array.from({ length: count }, (_, i) => {
+    const [a, b] = [i / count, (i + 0.5) / count]
+    return segment(x0 + (x1 - x0) * a, y0 + (y1 - y0) * a, x0 + (x1 - x0) * b, y0 + (y1 - y0) * b, width, fill)
+  }).join('')
+}
+// An example pace for when there is no live one (the website, the previews): three days in, 52% used
+const EXAMPLE_PACE = { used: 52, fairShare: 300 / 7, perDay: 12, isUrgent: true }
+
+// pace: { used, fairShare, perDay, isUrgent } as weekPace gives them. First he waves to get your attention, then he
+// lectures at a whiteboard drawn from your numbers, so it differs every time: the grey dashed line is an even pace to
+// 100% at the reset, the orange line is what you have used, the red dots are where this rate is heading, and the red X
+// is where it hits the limit. The worse the pace, the more worried he is: running out a day or more early, he waves
+// with both arms, sweats, trembles while he points, and the X keeps pulsing.
+function pacewarn(extra) {
+  const D = EVENT_SECONDS.pacewarn
+  const pace = extra?.pace ?? EXAMPLE_PACE
+  const urgent = Boolean(pace.isUrgent)
+  const T = 1.4
+  const [X0, X1, Y0, Y1] = [116, 166, 30, -4]
+  const nowDay = Math.min(7, Math.max(0.1, (pace.fairShare / 100) * 7))
+  const used = Math.min(100, Math.max(1, pace.used))
+  const runDay = Math.min(7, (nowDay * 100) / used)
+  const xAt = (day) => X0 + (day / 7) * (X1 - X0)
+  const yAt = (percent) => Y0 - (percent / 100) * (Y0 - Y1)
+  const [nx, ny] = [xAt(nowDay), yAt(used)]
+  const [rx, ry] = [xAt(runDay), Y1]
+  const RED = '#E5484D'
+  const ORANGE_LINE = '#F28A2E'
+  const board = rect(106, -14, 66, 64, '#9AA0A6') + rect(108, -12, 62, 60, '#FFFFFF') + rect(108, 34, 62, 14, '#F1EFE9') + rect(114, 50, 3, 36, '#7E848B') + rect(161, 50, 3, 36, '#7E848B') + rect(106, 48, 66, 3, '#7E848B')
+  const axes = rect(X0, Y1, 0.8, Y0 - Y1, '#5E6268') + rect(X0, Y0, X1 - X0, 0.8, '#5E6268') + Array.from({ length: 8 }, (_, d) => rect(xAt(d) - 0.4, Y0, 0.8, 2, '#5E6268')).join('')
+  const limitLine = dashes(X0, Y1, X1, Y1, 1.2, RED, 3)
+  const even = dashes(X0, Y0, X1, Y1, 1.2, '#9AA0A6', 3.5)
+  const appear = (inner, t) => wrap(inner, '', anim('opacity', D, [[0, '0'], [t, '0'], [t + 0.15, '1', 'lin'], [D, '1']], ONCE))
+  const STEPS = 6
+  const sofar = Array.from({ length: STEPS }, (_, i) => appear(segment(X0 + ((nx - X0) * i) / STEPS, Y0 + ((ny - Y0) * i) / STEPS, X0 + ((nx - X0) * (i + 1)) / STEPS, Y0 + ((ny - Y0) * (i + 1)) / STEPS, 2.2, ORANGE_LINE), n(T + 0.3 + i * 0.1))).join('') +
+    appear(disc(nx, ny, 2.4, ORANGE_LINE), n(T + 0.9))
+  const DOTS = 7
+  const heading = Array.from({ length: DOTS }, (_, i) => appear(rect(n(nx + ((rx - nx) * (i + 1)) / (DOTS + 1)) - 1, n(ny + ((ry - ny) * (i + 1)) / (DOTS + 1)) - 1, 2, 2, RED), n(T + 1.1 + i * 0.1))).join('')
+  const X_AT = T + 1.9
+  const cross = segment(-3.5, -3.5, 3.5, 3.5, 2, RED) + segment(-3.5, 3.5, 3.5, -3.5, 2, RED)
+  const pulse = urgent ? [anim('scale', 0.5, [[0, '1 1'], [0.25, '1.35 1.35', 'sio'], [0.5, '1 1', 'sio']], { begin: X_AT + 0.6 })] : []
+  const mark = wrap(wrap(cross, '', ...pulse), `translate(${n(rx)} ${n(ry)})`, anim('scale', D, [[0, '0 0'], [X_AT, '0 0'], [X_AT + 0.15, '1.6 1.6', 'p2out'], [X_AT + 0.3, '1 1', 'p2io'], [D, '1 1']], ONCE))
+  const alarm = appear(pixels(PIXEL['!'], n(rx) - 1, -11, 1.4, RED), X_AT + 0.1)
+  // The daily budget in its own strip along the bottom of the board, big enough to read: "7% A DAY"
+  const CELL = 1.6
+  const number = `${Math.floor(pace.perDay)}%`
+  const numberWidth = number.length * 4 * CELL
+  const budget = appear(digitsSvg(number, 116, 37, CELL, '#2F2F2A') + word('A', 116 + numberWidth + 3, 37, CELL, '#2F2F2A') + word('DAY', 116 + numberWidth + 11, 37, CELL, '#2F2F2A'), X_AT + 0.8)
+  const RIM = `fill="none" stroke="${INK}" stroke-width="1.8"`
+  const glasses = `<rect x="17" y="10" width="19" height="13" ${RIM}/><rect x="71" y="10" width="19" height="13" ${RIM}/>` + rect(36, 14, 35, 1.8, INK) + rect(19, 12, 4, 2, '#FFFFFF', 'fill-opacity=".7"') + rect(73, 12, 4, 2, '#FFFFFF', 'fill-opacity=".7"')
+  // The meter stick only appears once the waving is done; its tip (141, 16) in the hand's own place
+  const stick = between(wrap(rect(100, 29.5, 44, 3, '#E7C46A') + rect(100, 32, 44, 0.8, '#B08A3E') + Array.from({ length: 8 }, (_, i) => rect(104 + i * 5, 29.5, 0.8, i % 2 ? 1.4 : 2.2, '#8A6A2E')).join(''), 'rotate(-20 100 31)'), D, T - 0.05, D - 0.3)
+  const aim = (x, y) => `${n(x - 141)} ${n(y - 16)}`
+  // Waving to get your attention, then pointing at today, then tapping the X (faster and more often when it is bad)
+  const TAPS = urgent ? 4 : 2
+  const tapStep = urgent ? 0.13 : 0.16
+  const taps = Array.from({ length: TAPS }, (_, i) => [[n(X_AT + 0.25 + i * tapStep * 2), aim(rx, ry + 1), 'p2in'], [n(X_AT + 0.25 + i * tapStep * 2 + tapStep), aim(rx, ry + 4), 'p2out']]).flat()
+  const point = anim('translate', D, [[0, '0 0'], [0.2, '8 -40', 'p2out'], [T - 0.2, '8 -40'], [T + 0.2, aim(nx, ny + 4), 'p2io'], [X_AT - 0.2, aim(nx, ny + 4)], [X_AT + 0.15, aim(rx, ry + 4), 'p2io'], ...taps, [D - 0.4, aim(rx, ry + 4)], [D, '0 0', 'p2io']], ONCE)
+  const waveSpeed = urgent ? 0.1 : 0.14
+  const wave = anim('rotate', D, wiggle(D, 0.25, T - 0.25, waveSpeed, '-24 96 44', '24 96 44', '0 96 44'), ONCE)
+  const leftWave = urgent
+    ? { anims: [anim('translate', D, [[0, '0 0'], [0.2, '-8 -40', 'p2out'], [T - 0.2, '-8 -40'], [T + 0.1, '0 0', 'p2io'], [D, '0 0']], ONCE), anim('rotate', D, wiggle(D, 0.3, T - 0.25, waveSpeed, '24 11 44', '-24 11 44', '0 11 44'), ONCE)] }
+    : {}
+  // Hops while he waves; trembling while he lectures if it is bad
+  const hops = anim('translate', D, [[0, '0 0'], [0.15, '0 -8', 'p2out'], [0.3, '0 0', 'p2in'], ...(urgent ? [[0.6, '0 0'], [0.75, '0 -8', 'p2out'], [0.9, '0 0', 'p2in']] : []), [D, '0 0']], ONCE)
+  const tremble = urgent ? [anim('translate', D, wiggle(D, T, D - 0.6, 0.07, '-1 0', '1 0', '0 0'), ONCE)] : []
+  const sweat = drop(100, 0, 0.3) + (urgent ? drop(-8, 6, 1.0) + drop(102, 6, 2.2) + drop(-6, 2, 3.4) + drop(100, 4, 4.4) : '')
+  return figure({
+    ownProps: true,
+    face: glasses,
+    heldRaw: board + axes + limitLine + appear(even, T) + sofar + heading + mark + alarm + budget,
+    left: leftWave,
+    right: { hold: true, over: true, carry: stick, anims: [point, wave] },
+    upper: [hops, ...tremble],
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.2, '0 -2', 'p2io'], [T, '0 -2'], [T + 0.2, '5 -2', 'p2io'], [X_AT, '5 -2'], [X_AT + 0.2, '6 -4', 'p2io'], [D - 1.2, '6 -4'], [D - 0.9, '0 1', 'p2io'], [D, '0 1']], ONCE)],
+      // Wide to get your attention, worried while he explains (more so when it is bad), wide again when he looks back at you
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [0.2, '1.35 1.35', 'p2out'], [T, '1.35 1.35'], [T + 0.2, urgent ? '1.15 1.15' : '1 .7', 'p2io'], [D - 1.0, urgent ? '1.15 1.15' : '1 .7'], [D - 0.8, '1.3 1.3', 'p2out'], [D, '1.3 1.3']], ONCE)],
+    },
+    props: sweat,
+  })
+}
+
+// ---- Past your own daily limit: a gauge beside him swings into the red and he cowers, shaking ----
+
+// A wedge of a dial: the centre and points along the arc from angle a0 to a1 (degrees, 180 is left, 0 is right)
+function wedge(cx, cy, r, a0, a1, fill) {
+  const points = [[cx, cy]]
+  for (let a = a0; a >= a1 - 0.01; a -= (a0 - a1) / 8) points.push([cx + r * Math.cos((a * Math.PI) / 180), cy - r * Math.sin((a * Math.PI) / 180)])
+  return poly(points.map(([x, y]) => `${n(x)},${n(y)}`).join(' '), fill)
+}
+
+// extra.scare: how far past the limit (0 just past it, 1 a quarter further, and so on). The further past, the further
+// the needle pins into the red, the faster he shakes and the more he sweats.
+function scared(extra) {
+  const D = EVENT_SECONDS.scared
+  const level = Math.min(3, Math.max(0, extra?.scare ?? 1))
+  const [CX, CY, R] = [142, 44, 20]
+  const box = rect(116, 16, 52, 36, '#232428') + rect(116, 16, 52, 3, '#34363C')
+  const dial = wedge(CX, CY, R, 180, 120, '#3E9E62') + wedge(CX, CY, R, 120, 60, '#E7B04A') + wedge(CX, CY, R, 60, 0, '#E5484D') + disc(CX, CY, 6, '#232428')
+  const label = word('DAY', CX - 5.5, CY + 2, 1, '#C9CDD2')
+  // The needle points right at 0 degrees; it starts low, swings up into the red, and shudders there (harder the further past)
+  const pinned = n(-12 - level * 6)
+  const shudder = n(4 + level * 2)
+  const needle = wrap(rect(0, -1.2, R - 2, 2.4, '#FFFFFF') + disc(0, 0, 2.5, '#FFFFFF'), `translate(${CX} ${CY})`,
+    anim('rotate', D, [[0, '-175'], [0.3, '-175'], [0.9, `${pinned}`, 'back'], ...wiggle(D, 1.0, D - 0.3, 0.09, `${n(+pinned - shudder)}`, `${n(+pinned + shudder)}`, `${pinned}`).slice(2)], ONCE))
+  const alarms = Array.from({ length: Math.min(3, level + 1) }, (_, i) => between(pixels(PIXEL['!'], 4 + i * 6, -16, 2, '#E5484D'), D, 0.6 + i * 0.15, D - 0.2)).join('')
+  const step = Math.max(0.05, 0.09 - level * 0.015)
+  const shake = anim('translate', D, wiggle(D, 0.7, D - 0.3, step, '-1.6 0', '1.6 0', '0 0'), ONCE)
+  // He jumps back, then cowers: squashed down, hands up in front of his face, peeking over them
+  const jump = anim('translate', D, [[0, '0 0'], [0.5, '0 0'], [0.65, '-6 -10', 'p2out'], [0.8, '-8 0', 'p2in'], [D - 0.3, '-8 0'], [D, '0 0', 'p2io']], ONCE)
+  const cower = anim('translate', D, [[0, '0 0'], [0.8, '0 0'], [0.95, '0 6', 'p2out'], [D - 0.3, '0 6'], [D, '0 0', 'p2io']], ONCE)
+  const handsUp = (dx) => anim('translate', D, [[0, '0 0'], [0.8, '0 0'], [0.95, `${dx} -2`, 'p2out'], [D - 0.3, `${dx} -2`], [D, '0 0', 'p2io']], ONCE)
+  const sweat = drop(100, 0, 0.7) + drop(-8, 4, 1.1) + (level >= 1 ? drop(102, 6, 1.6) + drop(-6, 2, 2.0) : '') + (level >= 2 ? drop(98, 2, 2.4) + drop(-10, 8, 2.8) : '')
+  return wrap(figure({
+    ownProps: true,
+    left: { hold: true, over: true, anims: [handsUp(18)] },
+    right: { hold: true, over: true, anims: [handsUp(-18)] },
+    upper: [cower, shake],
+    eyes: {
+      gaze: [anim('translate', D, [[0, '0 0'], [0.3, '6 2', 'p2io'], [0.9, '6 2'], [1.0, '3 -3', 'p2io'], [D, '3 -3']], ONCE)],
+      scaleAnims: [anim('scale', D, [[0, '1 1'], [0.5, '1 1'], [0.6, '1.45 1.45', 'p2out'], [D - 0.3, '1.45 1.45'], [D, '1 1', 'p2io']], ONCE)],
+    },
+    props: sweat + alarms,
+  }), '', jump) + box + dial + label + needle
+}
+
 // Drawing a chart: bars rise one by one on a whiteboard beside him while he points them out with a stick
 function chart() {
   const D = EVENT_SECONDS.chart
@@ -4305,6 +4444,8 @@ const LOOKS = {
   medal,
   welcomeback,
   cake,
+  pacewarn,
+  scared,
   chart,
   kanban,
   pet,
@@ -4332,7 +4473,7 @@ const LOOKS = {
 
 export const VECTOR_STATES = Object.keys(LOOKS)
 // The reactions to Claude Code's events: each has one version (no running one); the one-off ones play once and hold
-export const REACTIONS = ['permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog', 'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'wonder', 'thumbsup', 'comfort', 'heavybook', 'shredder', 'relabel', 'download', 'rewind', 'drench', 'medal', 'welcomeback', 'cake', 'chart', 'kanban', 'pet', 'grumpy', 'bow', 'party', 'longscroll', 'knock', 'whale', 'snake', 'ferris', 'erase', 'hatch', 'puff', 'wrench', 'multiarm', 'boxin', 'sweep', 'gears']
+export const REACTIONS = ['permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch', 'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog', 'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'wonder', 'thumbsup', 'comfort', 'heavybook', 'shredder', 'relabel', 'download', 'rewind', 'drench', 'medal', 'welcomeback', 'cake', 'pacewarn', 'scared', 'chart', 'kanban', 'pet', 'grumpy', 'bow', 'party', 'longscroll', 'knock', 'whale', 'snake', 'ferris', 'erase', 'hatch', 'puff', 'wrench', 'multiarm', 'boxin', 'sweep', 'gears']
 
 // extra.percent: how full the limit is, for the clock and the calendar
 export function figureFor(state, gait, extra = {}) {
@@ -4399,13 +4540,14 @@ function walkSlide(x0, x1, seconds, rampIn) {
   ], { once: true })
 }
 
-export function bandLayout({ columns, fromCol, toCol = fromCol, walkSeconds = 0, dir = 1, state = 'calm', gait = 'idle', percent, unit = UNIT, chips = [], resume = false, inline = false, slideFrom = null, outfit = null, scene = null, wind = 0, tasks = 0, coffee = false, questions = 1, helpers = 0, helperLeaving = false, hud = null, effort = null }) {
-  // The desktop shows a full meter by its glow, so the text badge ('getting full') is for the terminal only
-  chips = chips.filter((chip) => chip.kind !== 'badge')
-  return layoutBand({ columns, fromCol, toCol, walkSeconds, dir, state, gait, percent, unit, chips, resume, inline, slideFrom, outfit, scene, wind, tasks, coffee, questions, helpers, helperLeaving, hud, effort })
+export function bandLayout({ columns, fromCol, toCol = fromCol, walkSeconds = 0, dir = 1, state = 'calm', gait = 'idle', percent, unit = UNIT, chips = [], resume = false, inline = false, slideFrom = null, outfit = null, scene = null, wind = 0, tasks = 0, coffee = false, questions = 1, helpers = 0, helperLeaving = false, hud = null, effort = null, pace = null, scare = null }) {
+  // The desktop shows a full meter by its glow, so the text badge ('getting full') is for the terminal only;
+  // the weekly pace tag has no glow to stand in for it, so it shows here too
+  chips = chips.filter((chip) => chip.kind !== 'badge' || chip.onDesktop)
+  return layoutBand({ columns, fromCol, toCol, walkSeconds, dir, state, gait, percent, unit, chips, resume, inline, slideFrom, outfit, scene, wind, tasks, coffee, questions, helpers, helperLeaving, hud, effort, pace, scare })
 }
 
-function layoutBand({ columns, fromCol, toCol, walkSeconds, dir, state, gait, percent, unit, chips, resume, inline, slideFrom, outfit, scene, wind, tasks, coffee, questions, helpers, helperLeaving, hud, effort }) {
+function layoutBand({ columns, fromCol, toCol, walkSeconds, dir, state, gait, percent, unit, chips, resume, inline, slideFrom, outfit, scene, wind, tasks, coffee, questions, helpers, helperLeaving, hud, effort, pace, scare }) {
   const width = columns * COLUMN_PX
   const widthUnits = width / unit
   const px = (col) => n((col * COLUMN_PX) / unit)
@@ -4430,7 +4572,7 @@ function layoutBand({ columns, fromCol, toCol, walkSeconds, dir, state, gait, pe
   const fromUnits = isInline ? originUnits : px(fromCol)
   const startUnits = reach ? n(Math.min(Math.max(fromUnits, -reach[0]), widthUnits - reach[1])) : fromUnits
 
-  const figureSvg = figureFor(state, gait, { percent, outfit, tasks, coffee, questions, effort }) + (hasHelpers ? helpersSvg(helpers, helperLeaving) : '')
+  const figureSvg = figureFor(state, gait, { percent, outfit, tasks, coffee, questions, effort, pace, scare }) + (hasHelpers ? helpersSvg(helpers, helperLeaving) : '')
   // Only the plain looks turn around when he walks left: anything he holds or wears (paper, book, clock face, hat) would come out back to front
   const flipped = dir < 0 && TURNS_AROUND.has(state) ? `<g transform="translate(${SPRITE_UNITS} 0) scale(-1 1)">${figureSvg}</g>` : figureSvg
   // New pills came in: he is pushed along to his new place instead of jumping there.

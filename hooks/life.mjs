@@ -109,6 +109,8 @@ export const EVENT_MS = {
   medal: 3_400,
   welcomeback: 3_000,
   cake: 3_800,
+  pacewarn: 6_000,
+  scared: 3_600,
   chart: 3_000,
   kanban: 3_200,
   pet: 3_200,
@@ -228,7 +230,7 @@ export const STATES = ['calm', 'tired', 'strained', 'critical', 'think', 'edit',
   'permission', 'asking', 'shrug', 'oops', 'glitch', 'stamp', 'pop', 'peek', 'house', 'hello', 'bye', 'folder', 'plan', 'auto', 'ask', 'send', 'receive', 'present', 'shrink', 'buff', 'ascend', 'fall', 'firstsnow',
   'cheer', 'facepalm', 'ship', 'rocket', 'browse', 'trophy', 'yoyo', 'juggle', 'stretch',
   'phone', 'coffee', 'game', 'gum', 'music', 'readbook', 'startled', 'blush', 'nervous', 'flinch', 'camera', 'tapfoot', 'yawn', 'unbox', 'magnify', 'mail', 'risky', 'listen', 'mog',
-  'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'wonder', 'thumbsup', 'comfort', 'heavybook', 'shredder', 'relabel', 'download', 'rewind', 'drench', 'medal', 'welcomeback', 'cake', 'chart', 'kanban',
+  'readfile', 'photo', 'todo', 'browser', 'mouseride', 'spellbook', 'toolbox', 'alarm', 'binoculars', 'plugin', 'sculpt', 'inbox', 'planner', 'cabinet', 'clapper', 'netcatch', 'apptest', 'blocks', 'highlight', 'cube', 'unity', 'goodmorning', 'goodnight', 'satellite', 'armwrestle', 'redbutton', 'comb', 'dig', 'parachute', 'labcoat', 'paint', 'quill', 'water', 'sandwich', 'crossclaws', 'laugh', 'onfire', 'brb', 'paperstack', 'bricks', 'detective', 'rug', 'signpost', 'checkall', 'monday', 'weekend', 'wonder', 'thumbsup', 'comfort', 'heavybook', 'shredder', 'relabel', 'download', 'rewind', 'drench', 'medal', 'welcomeback', 'cake', 'pacewarn', 'scared', 'chart', 'kanban',
   'pet', 'grumpy', 'bow', 'party', 'longscroll', 'knock', 'whale', 'snake', 'ferris', 'erase', 'hatch', 'puff', 'wrench', 'multiarm', 'boxin', 'sweep', 'gears']
 
 // ctx: { mood, turnRunning, asleep, sleepAgeMs, tool, toolAgeMs, doneAgeMs, wakeAgeMs, gymAgeMs, flagAgeMs, alertAgeMs,

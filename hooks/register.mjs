@@ -1,7 +1,7 @@
 // Krab Koder: a little crab above the prompt who walks around and shows
 // your context window and plan usage by how he acts.
 // It only draws and watches events: no network, no files, no processes.
-import { dueAlert, FIVE_HOUR, findLimit, limitWarning, percentBucket, rememberReading, resetThatEnded, WEEK } from './limits.mjs'
+import { DEFAULT_DAILY_LIMIT, dueAlert, FIVE_HOUR, findLimit, limitWarning, paceMessage, percentBucket, rememberReading, resetThatEnded, scareStep, todayUsage, WEEK, weekPace } from './limits.mjs'
 import { ALERT_MS, COMPACT_MAX_MS, createLife, EVENT_MS, FLAG_MS, GYM_MS, modelNote, modelSwitchLook, moodFor, poseFor, readout, SLEEP_AFTER_MS, stateFor, stepLife, TICK_MS, WAKE_MS } from './life.mjs'
 import { chipsFor, chipsText } from './chips.mjs'
 import { cellNumbers, packCells, pixelsFor, SPRITE_COLUMNS, SPRITE_ROWS } from './sprite.mjs'
@@ -133,6 +133,18 @@ async function countToday($, today) {
   }
 }
 
+// Whether today's weekly-pace warning has gone out (once a day, across sessions)
+async function shouldWarnPace($, today) {
+  try {
+    if ((await $.store.get('paceWarnedOn')) === today) return false
+    await $.store.set('paceWarnedOn', today)
+    return true
+  } catch {
+    // Nothing to tell the user: at worst the warning comes again or not at all today
+    return false
+  }
+}
+
 async function countMessage($) {
   try {
     const count = (Number(await $.store.get('messageCount')) || 0) + 1
@@ -248,6 +260,12 @@ export function register(on) {
   let turnStartAt = 0
   // Tool calls in this reply, and whether that has earned a drenching yet
   let toolsThisTurn = 0
+  // The weekly pace he last warned about, for his whiteboard chart
+  let lastPace = null
+  // Your own daily limit (a percent of the week; null when turned off), where today began, and how far past it he last got scared
+  let dailyLimit = DEFAULT_DAILY_LIMIT
+  let dayStart = null
+  let lastScare = 0
   let hasDrenchedThisTurn = false
   // When the session began, and how many cakes its milestones have earned
   const sessionStartAt = Date.now()
@@ -423,7 +441,7 @@ export function register(on) {
     const { state, gait } = lookNow(ctx)
     const fullness = state === 'clock' || state === 'calendar' ? percentBucket(ctx.limit.percent) : ''
     const readoutKey = JSON.stringify(chipsFor(snapshot, noteFor(ctx)))
-    const extras = [helpers.length, isHelperLeaving() ? 'bye' : '', state === 'asking' ? questions : '', state === 'gym' ? effort : '', hudKey()].join(',')
+    const extras = [helpers.length, isHelperLeaving() ? 'bye' : '', state === 'asking' ? questions : '', state === 'gym' ? effort : '', state === 'pacewarn' ? JSON.stringify(lastPace) : '', state === 'scared' ? lastScare : '', hudKey()].join(',')
     return [extras, state, gait, ctx.mood, life.mode, life.dir, life.target, bandColumns, fullness, size, outfitNow(), (sceneNow() ?? []).join('+'), windNow(), readoutKey, state === 'task' ? `${ctx.tasks}${isCoffeeTime() ? 'c' : ''}` : ''].join('|')
   }
 
@@ -474,6 +492,8 @@ export function register(on) {
       helperLeaving: isHelperLeaving(),
       hud: hudNow(),
       effort,
+      pace: lastPace,
+      scare: lastScare,
       // From 7 am to noon he has a coffee while he waits on background work
       coffee: isCoffeeTime(),
       unit: SIZES[size],
@@ -494,6 +514,10 @@ export function register(on) {
     if (saved && typeof saved.percentUsed === 'number') lastFive = saved
     const savedOutfit = await $.store.get('outfit')
     if (savedOutfit === 'auto' || savedOutfit === 'off' || OUTFIT_IDS.includes(savedOutfit)) outfitChoice = savedOutfit
+    const savedDaily = await $.store.get('dailyLimit')
+    if (savedDaily === null || (typeof savedDaily === 'number' && savedDaily > 0 && savedDaily <= 100)) dailyLimit = savedDaily
+    const savedDayStart = await $.store.get('dayStart')
+    if (savedDayStart && typeof savedDayStart.percent === 'number') dayStart = savedDayStart
     const savedWeather = await $.store.get('weather')
     if (savedWeather === 'auto' || savedWeather === 'off' || savedWeather in TRIAL) weatherChoice = savedWeather
     const savedDays = await $.store.get('days')
@@ -611,6 +635,25 @@ export function register(on) {
 
   on('session.measure', async ($, e, next) => {
     snapshot = { context: e.context, rateLimits: e.rateLimits, cost: e.cost }
+    // Today's share of the weekly limit, against your own daily limit: a meter on the bar, and past the limit he gets
+    // scared (again each time you go another quarter of the limit further), with a heads-up the first time
+    const weekNow = findLimit(e.rateLimits, WEEK)
+    if (weekNow && dailyLimit !== null) {
+      const counted = todayUsage(dayStart, weekNow, new Date(Date.now()).toDateString())
+      const step = scareStep(counted.used, dailyLimit)
+      dayStart = step > counted.dayStart.scaredStep ? { ...counted.dayStart, scaredStep: step } : counted.dayStart
+      if (step > counted.dayStart.scaredStep) {
+        lastScare = step
+        play('scared')
+        if (step === 0) $.ui.toast(`You've used your daily limit: ${Math.round(counted.used)}% of the week today (your limit is ${Math.round(dailyLimit)}%). Going past it eats into the rest of the week.`)
+      }
+      try {
+        await $.store.set('dayStart', dayStart)
+      } catch {
+        // Nothing to tell the user: today's count starts again from the next reading
+      }
+      snapshot = { ...snapshot, today: { used: counted.used, limit: dailyLimit } }
+    }
     const reading = findLimit(e.rateLimits, FIVE_HOUR)
     const ended = resetThatEnded({ last: lastFive, reading, nowMs: Date.now() })
     if (ended !== null) {
@@ -629,6 +672,14 @@ export function register(on) {
       alerted[due.which] = due.key
       alert = { state: due.state, percent: due.percent, label: due.which === 'five' ? '5-hour' : 'weekly' }
       alertAt = Date.now()
+    }
+    // On course to use up the weekly limit before it resets: a warning, at most once a day
+    const pace = weekPace(findLimit(e.rateLimits, WEEK), Date.now())
+    // and he gives the lecture at his whiteboard, charting this week from your own numbers
+    if (pace?.isOver && (await shouldWarnPace($, new Date(Date.now()).toDateString()))) {
+      $.ui.toast(paceMessage(pace, Date.now()))
+      lastPace = pace
+      play('pacewarn')
     }
     $.ui.invalidate('ui.render')
     return next(e)
@@ -1076,7 +1127,22 @@ export function register(on) {
         ...(Object.values(days).some(Boolean) ? [] : ['/krab birthday Jan 15 (and gf-birthday, bf-birthday, anniversary) for your days']),
       ]
       const hint = missing.length ? ` To set up: ${missing.join('; ')}.` : ''
-      return { text: `${dayList}. Location: ${place?.name ?? 'not set'}. Holidays: ${regions.length ? regions.join(', ') : 'worldwide only'}.${hint}` }
+      const daily = dailyLimit === null ? 'off' : `${Math.round(dailyLimit)}% of the week`
+      return { text: `${dayList}. Location: ${place?.name ?? 'not set'}. Holidays: ${regions.length ? regions.join(', ') : 'worldwide only'}. Daily limit: ${daily} (/krab daily).${hint}` }
+    }
+    // Your own daily limit, as a percent of the week: /krab daily 20, /krab daily auto (an even 14%), /krab daily off
+    if (choice === 'daily' || choice.startsWith('daily ')) {
+      const wanted = choice.slice('daily'.length).trim().replace('%', '') || 'auto'
+      const number = Number(wanted)
+      if (wanted !== 'auto' && wanted !== 'off' && !(number > 0 && number <= 100)) return { text: 'Use /krab daily <percent of the week> (like 20), /krab daily auto (an even 14% a day) or /krab daily off' }
+      dailyLimit = wanted === 'off' ? null : wanted === 'auto' ? DEFAULT_DAILY_LIMIT : number
+      try {
+        await $.store.set('dailyLimit', dailyLimit)
+      } catch {
+        // Nothing to tell the user: the limit holds for this session
+      }
+      $.ui.invalidate('ui.render')
+      return { text: dailyLimit === null ? 'Krab stops tracking a daily limit' : `Daily limit: ${Math.round(dailyLimit)}% of the week. The "today" meter shows how close you are, and Krab gets scared past it.` }
     }
     if (choice === 'time' || choice.startsWith('time ')) {
       const wanted = choice.slice('time'.length).trim() || 'auto'
@@ -1111,7 +1177,7 @@ export function register(on) {
       await saveSize($, size)
       $.ui.invalidate('ui.render')
       return { text: `Krab is ${size} size` }
-    } else return { text: 'Use /krab on, off, small, normal, big, outfit auto|off|<name>, weather auto|off|<kind>, time auto|night|sunrise|sunset|day, sky auto|aurora|meteors|bloodmoon|supermoon|harvest|ufo|comet|eclipse, settings, birthday|gf-birthday|bf-birthday|anniversary <date>, location <city>, or holidays <codes>' }
+    } else return { text: 'Use /krab on, off, small, normal, big, outfit auto|off|<name>, weather auto|off|<kind>, time auto|night|sunrise|sunset|day, sky auto|aurora|meteors|bloodmoon|supermoon|harvest|ufo|comet|eclipse, settings, daily <percent>|auto|off, birthday|gf-birthday|bf-birthday|anniversary <date>, location <city>, or holidays <codes>' }
     $.ui.invalidate('ui.render')
     return { text: isEnabled ? 'Krab is on' : 'Krab is off' }
   })

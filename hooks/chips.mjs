@@ -1,6 +1,7 @@
 // The readout under Clawd as a row of small pills: how full each meter is, in colour, instead of plain text.
 // Pure drawing and wording code: it never calls Claude Code, so plain node can test it.
 import { moodFor } from './life.mjs'
+import { findLimit, WEEK, weekPace, whenText } from './limits.mjs'
 
 const GREEN = '#5E8C6A'
 const AMBER = '#E7B04A'
@@ -59,10 +60,22 @@ export function chipsFor(snapshot, note = null, nowMs = Date.now()) {
       color: levelColor(limit.percentUsed),
     })
   }
+  // Today's use against your own daily limit: "9/14%", orange when close, red once past it
+  const today = snapshot.today
+  if (today && typeof today.used === 'number' && today.limit > 0) {
+    const share = (today.used / today.limit) * 100
+    chips.push({ kind: 'meter', label: 'today', percent: Math.min(100, share), text: `${Math.round(today.used)}/${Math.round(today.limit)}%`, color: share >= 100 ? RED : share >= 80 ? ORANGE : GREEN })
+  }
+  // On course to run out of the weekly limit before it resets: a tag right after the meters (red if a day or more early)
+  const pace = weekPace(findLimit(snapshot.rateLimits, WEEK), nowMs)
+  if (pace?.isOver) chips.push({ kind: 'badge', text: 'over pace', color: pace.isUrgent ? RED : ORANGE, onDesktop: true })
   if (typeof snapshot.cost?.usd === 'number') chips.push({ kind: 'text', text: `$${snapshot.cost.usd.toFixed(2)}` })
   const fiveHour = (snapshot.rateLimits ?? []).find((limit) => limit.kind === 'five_hour')
   const reset = fiveHour ? resetText(fiveHour.resetsAt, nowMs) : null
   if (reset) chips.push({ kind: 'text', text: reset })
+  // When the weekly limit resets, as a day and time: "7d resets Wed 7 PM"
+  const week = findLimit(snapshot.rateLimits, WEEK)
+  if (week?.resetsAtMs && week.resetsAtMs > nowMs) chips.push({ kind: 'text', text: `7d resets ${whenText(week.resetsAtMs, nowMs)}` })
   const status = STATUS[moodFor(percent)]
   if (status) chips.push({ kind: 'badge', text: status[0], color: status[1] })
   return chips

@@ -25,7 +25,7 @@
   <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-d97757">
   <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-d97757">
   <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-none-3fa34d">
-  <img alt="146 reactions" src="https://img.shields.io/badge/reactions-146-8fc7f2">
+  <img alt="148 reactions" src="https://img.shields.io/badge/reactions-148-8fc7f2">
   <img alt="80 outfits" src="https://img.shields.io/badge/outfits-80-f2c230">
 </p>
 
@@ -35,7 +35,7 @@
 
 ## 🦀 He reacts to Claude's work
 
-146 reactions in all, from the tools and apps Claude uses (web searches, builds, deploys, databases, Blender, Unity and more) to what you write ("gm", "lol", 🔥) and the time of the week. These are the ones you'll see every day:
+148 reactions in all, from the tools and apps Claude uses (web searches, builds, deploys, databases, Blender, Unity and more) to what you write ("gm", "lol", 🔥) and the time of the week. These are the ones you'll see every day:
 
 <table>
   <tr>
@@ -190,6 +190,7 @@ Out of the box he shows worldwide holidays and no weather. A few commands make h
 | `/krab holidays <codes>` | Which holidays to follow, such as `CA`, `US`, `MX`, `GB` or `CA-ON` for a province |
 | `/krab birthday <date>` | Your birthday, such as `Jan 15` |
 | `/krab gf-birthday`, `bf-birthday`, `anniversary <date>` | Other days that matter to you |
+| `/krab daily <percent>`, `auto` or `off` | Your own daily limit as a share of the weekly limit (an even 14% unless you set one): a "today" meter on the bar, and he gets scared past it. He also warns you, at a whiteboard, when you're on course to use up the week before it resets |
 | `/krab on`, `off` | Show or hide him |
 | `/krab small`, `normal`, `big` | Change his size |
 | `/krab outfit auto`, `off` or a name | Follow the date, take the outfit off, or try one |

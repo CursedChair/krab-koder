@@ -290,7 +290,8 @@ test('nearing the five-hour limit shows the clock, and the weekly limit shows th
   assert.ok(clock.includes(CLOCK), 'clock glass')
   assert.ok(!clock.includes(CALENDAR_HEADER))
 
-  const week = harness()
+  // (today's weekly pace warning has already been shown, so the calendar is not interrupted by it)
+  const week = harness({ store: { paceWarnedOn: new Date(START).toDateString() } })
   await week.start()
   await week.fire('session.measure', measure({ percent: 30, resetsAtMs: START + 3 * HOUR }, 91))
   week.advance(1_000)
@@ -333,7 +334,7 @@ test('/krab off hides him and /krab on brings him back', async () => {
   assert.equal(await h.render(), undefined)
   assert.deepEqual(await h.fire('command.run', { command: 'krab', args: 'on' }), { text: 'Krab is on' })
   assert.ok(await h.render())
-  assert.deepEqual(await h.fire('command.run', { command: 'krab', args: 'sideways' }), { text: 'Use /krab on, off, small, normal, big, outfit auto|off|<name>, weather auto|off|<kind>, time auto|night|sunrise|sunset|day, sky auto|aurora|meteors|bloodmoon|supermoon|harvest|ufo|comet|eclipse, settings, birthday|gf-birthday|bf-birthday|anniversary <date>, location <city>, or holidays <codes>' })
+  assert.deepEqual(await h.fire('command.run', { command: 'krab', args: 'sideways' }), { text: 'Use /krab on, off, small, normal, big, outfit auto|off|<name>, weather auto|off|<kind>, time auto|night|sunrise|sunset|day, sky auto|aurora|meteors|bloodmoon|supermoon|harvest|ufo|comet|eclipse, settings, daily <percent>|auto|off, birthday|gf-birthday|bf-birthday|anniversary <date>, location <city>, or holidays <codes>' })
 })
 
 test('the desktop picture is only redrawn when his look changes, not on every tick', async () => {
@@ -369,7 +370,7 @@ test('a weekly limit at 98% brings the calendar back, even while Claude is worki
 })
 
 test('97% is only the usual warning, not an alert', async () => {
-  const h = harness()
+  const h = harness({ store: { paceWarnedOn: new Date(START).toDateString() } })
   await h.start()
   await h.fire('turn.start', {})
   await h.fire('tool.call', { tool: 'Edit' })
@@ -1085,6 +1086,50 @@ test('in a quiet spell around lunch he eats a sandwich', async () => {
   h.advance(30_000)
   await h.tick()
   assert.equal(await lookName(h), 'sandwich')
+})
+
+test('running ahead of the weekly pace pops up a warning, once a day', async () => {
+  const h = harness()
+  await h.start()
+  const before = h.toasts.length
+  // The week resets 100 hours after the start, so it is 68 hours (about 40%) through
+  await h.fire('session.measure', measure(null, 30))
+  assert.equal(h.toasts.length, before, 'on pace: no warning')
+  await h.fire('session.measure', measure(null, 60))
+  assert.equal(h.toasts.length, before + 1)
+  assert.match(h.toasts.at(-1), /Weekly limit: 60% used/)
+  assert.equal(await lookName(h), 'pacewarn', 'and he gives the whiteboard lecture')
+  await h.fire('session.measure', measure(null, 62))
+  assert.equal(h.toasts.length, before + 1, 'once a day')
+})
+
+test('going past your daily limit scares him, with a heads-up, and again a quarter further on', async () => {
+  const h = harness({ store: { paceWarnedOn: new Date(START).toDateString() } })
+  await h.start()
+  await h.fire('session.measure', measure(null, 20))
+  const before = h.toasts.length
+  await h.fire('session.measure', measure(null, 30))
+  assert.notEqual(await lookName(h), 'scared', '10% today is under 14%')
+  h.advance(5_000)
+  await h.fire('session.measure', measure(null, 35))
+  assert.equal(await lookName(h), 'scared')
+  assert.match(h.toasts.at(-1), /daily limit/)
+  assert.equal(h.toasts.length, before + 1)
+  h.advance(5_000)
+  await h.fire('session.measure', measure(null, 36))
+  assert.notEqual(await lookName(h), 'scared', 'once for that step')
+  h.advance(5_000)
+  await h.fire('session.measure', measure(null, 38))
+  assert.equal(await lookName(h), 'scared', 'a quarter of the limit further')
+})
+
+test('/krab daily sets your own daily limit, or turns it off', async () => {
+  const h = harness()
+  await h.start()
+  const say = async (args) => (await h.fire('command.run', { command: 'krab', args })).text
+  assert.match(await say('daily 20'), /20% of the week/)
+  assert.match(await say('daily off'), /stops tracking/)
+  assert.match(await say('daily lots'), /Use \/krab daily/)
 })
 
 test('the 100th message of the day earns a medal, and a session an hour old earns a cake once per milestone', async () => {

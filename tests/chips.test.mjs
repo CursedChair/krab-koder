@@ -93,3 +93,24 @@ test('over a picture the pills get a dark backing and light text, so they stay r
   assert.equal((backed.match(/fill="#14161B"/g) ?? []).length, 5)
   assert.ok(backed.includes('color="#F2F1EC"'))
 })
+
+test('an "over pace" tag follows the meters when the weekly limit would run out before it resets', () => {
+  const now = Date.UTC(2026, 10, 10, 12)
+  const snapshot = (week) => ({ context: { percent: 20 }, rateLimits: [{ kind: 'seven_day', percentUsed: week, resetsAt: new Date(now + 4 * 86_400_000).toISOString() }] })
+  const tag = (week) => chipsFor(snapshot(week), null, now).find((chip) => chip.text === 'over pace')
+  assert.equal(tag(40), undefined, 'on pace')
+  assert.equal(tag(48).color, '#F28A2E', 'ahead: orange')
+  assert.equal(tag(70).color, '#E03C31', 'a day or more early: red')
+})
+
+test('a "today" meter shows today against the daily limit, and the weekly reset shows as a day and time', () => {
+  const now = new Date(2026, 10, 10, 12).getTime()
+  const snapshot = (used) => ({ context: { percent: 20 }, rateLimits: [{ kind: 'seven_day', percentUsed: 40, resetsAt: new Date(2026, 10, 11, 19).toISOString() }], today: { used, limit: 100 / 7 } })
+  const meter = (used) => chipsFor(snapshot(used), null, now).find((chip) => chip.label === 'today')
+  assert.equal(meter(9).text, '9/14%')
+  assert.equal(meter(9).color, '#5E8C6A')
+  assert.equal(meter(12).color, '#F28A2E', 'close: orange')
+  assert.equal(meter(16).color, '#E03C31', 'past it: red')
+  assert.equal(meter(16).percent, 100, 'the bar stops at full')
+  assert.ok(chipsFor(snapshot(5), null, now).some((chip) => chip.text === '7d resets Wed 7 PM'))
+})

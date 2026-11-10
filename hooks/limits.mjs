@@ -83,3 +83,67 @@ export function dueAlert(readings, alerted) {
   }
   return due.sort((a, b) => b.percent - a.percent)[0] ?? null
 }
+
+// ---- Weekly pace: are you on track to run out of the weekly limit before it resets? ----
+const DAY_MS = 86_400_000
+export const WEEK_MS = 7 * DAY_MS
+// An even pace is 100% over 7 days (about 14.3% a day). He only warns once you are this many points ahead of it,
+// so one busy hour early in the week is not nagged about.
+export const PACE_MARGIN = 5
+// A run-out this many days or more before the reset makes the warning urgent
+const URGENT_DAYS_EARLY = 1
+
+// week: the weekly reading as findLimit gives it. Returns null when the reset time is unknown, otherwise
+// { used, fairShare (how much an even pace would have used by now), perDay (what is left per remaining day),
+//   runsOutMs (when it runs out at this week's average rate, or null), resetsAtMs, isOver, isUrgent }
+export function weekPace(week, nowMs) {
+  if (!week || week.resetsAtMs === null || week.resetsAtMs === undefined) return null
+  const startMs = week.resetsAtMs - WEEK_MS
+  const elapsed = Math.min(Math.max(nowMs - startMs, 0), WEEK_MS)
+  const left = WEEK_MS - elapsed
+  if (left <= 0) return null
+  const fairShare = (elapsed / WEEK_MS) * 100
+  const perDay = Math.max(0, 100 - week.percentUsed) / (left / DAY_MS)
+  const runsOutMs = elapsed > 0 && week.percentUsed > 0 ? startMs + (100 / week.percentUsed) * elapsed : null
+  const isOver = week.percentUsed >= fairShare + PACE_MARGIN && runsOutMs !== null && runsOutMs < week.resetsAtMs
+  const isUrgent = isOver && week.resetsAtMs - runsOutMs >= URGENT_DAYS_EARLY * DAY_MS
+  return { used: week.percentUsed, fairShare, perDay, runsOutMs, resetsAtMs: week.resetsAtMs, isOver, isUrgent }
+}
+
+// A moment in words, like "Thu 3 PM" ("today 3 PM" when it is today)
+export function whenText(ms, nowMs) {
+  const d = new Date(ms)
+  const hour = d.getHours()
+  const time = `${hour % 12 || 12} ${hour < 12 ? 'AM' : 'PM'}`
+  if (new Date(nowMs).toDateString() === d.toDateString()) return `today ${time}`
+  return `${d.toLocaleDateString('en-US', { weekday: 'short' })} ${time}`
+}
+
+// The warning for a pace that is over: when it runs out, when it resets, and how much a day makes it last
+export function paceMessage(pace, nowMs) {
+  return `Weekly limit: ${Math.round(pace.used)}% used, but an even pace would be ${Math.round(pace.fairShare)}% by now. ` +
+    `At this rate it runs out ${whenText(pace.runsOutMs, nowMs)}, before it resets ${whenText(pace.resetsAtMs, nowMs)}. ` +
+    `To make it last, keep to about ${Math.floor(pace.perDay)}% a day.`
+}
+
+// ---- Your own daily limit: the slice of the weekly limit you allow yourself each day ----
+// The default: an even share of the week, 100% over 7 days (about 14.3%)
+export const DEFAULT_DAILY_LIMIT = 100 / 7
+// Past the daily limit he gets scared, and again each time you go another quarter of the limit further
+const SCARE_STEP = 0.25
+
+// dayStart: { day, percent, window, scaredStep } remembered from earlier today, or null. today: the date in words.
+// Today starts at the first weekly reading of the day (or when the week resets). Returns the record to keep and today's use.
+export function todayUsage(dayStart, week, today) {
+  if (!week) return { dayStart, used: null }
+  const window = week.resetsAtMs ?? null
+  const isFresh = !dayStart || dayStart.day !== today || dayStart.window !== window || week.percentUsed < dayStart.percent
+  const start = isFresh ? { day: today, percent: week.percentUsed, window, scaredStep: -1 } : dayStart
+  return { dayStart: start, used: Math.max(0, week.percentUsed - start.percent) }
+}
+
+// How far past the daily limit today's use is, in quarter-limit steps: -1 under it, 0 just past it, 1 a quarter further...
+export function scareStep(used, limit) {
+  if (typeof used !== 'number' || !(limit > 0) || used < limit) return -1
+  return Math.floor((used - limit) / (limit * SCARE_STEP))
+}
