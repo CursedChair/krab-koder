@@ -7,7 +7,7 @@
 // and frames held longer where the effort is.
 //
 // It never calls Claude Code, so plain node can test it.
-import { bigCanadianFlag, bigChileanFlag, bigChineseFlag, bigMexicanFlag, bigUsFlag, heartEye, OUTFITS } from './outfits.mjs'
+import { bigCanadianFlag, bigChileanFlag, bigChineseFlag, bigMexicanFlag, bigUsFlag, heartEye, OUTFITS, outfitLabel } from './outfits.mjs'
 import { FRONT_SCENES, PILING_SCENES, sceneSvg } from './scenery.mjs'
 import { CHIP_HEIGHT, chipsSvg, fitChips, GLOW_PAD } from './chips.mjs'
 import { COLOURS as SHEET_COLOURS, FLAG, GYM } from './sheets.mjs'
@@ -25,6 +25,8 @@ export const COLUMN_PX = 8
 // pole is taller, so the flag gets a taller picture while it plays.
 export const TOP = -46
 export const TOP_TALL = -74
+// How far to his right the outfit tag keeps clear of him: past anything he holds out, or a board or gauge beside him
+const TAG_CLEARANCE_UNITS = 175
 const TALL_LOOKS = new Set(['flag', 'think', 'task', 'permission', 'asking', 'pop', 'hello', 'bye', 'folder', 'auto', 'send', 'receive', 'glitch', 'buff', 'ascend', 'fall', 'firstsnow', 'cheer', 'rocket', 'trophy', 'startled', 'unbox', 'mail', 'music', 'blush', 'listen', 'mog', 'pet', 'grumpy', 'gears', 'party', 'longscroll', 'whale', 'knock', 'browser', 'mouseride', 'spellbook', 'toolbox', 'inbox', 'planner', 'cabinet', 'netcatch', 'cube', 'goodmorning', 'goodnight', 'satellite', 'comb', 'parachute', 'water', 'crossclaws', 'laugh', 'brb', 'paperstack', 'monday', 'wonder', 'drench', 'medal', 'welcomeback', 'pacewarn', 'scared'])
 export const topFor = (state) => (TALL_LOOKS.has(state) ? TOP_TALL : TOP)
 export const SPRITE_UNITS = 107
@@ -2095,6 +2097,46 @@ export function hudSvg({ hour, minute, day, weather = null, sessions = 1, cell =
   const w = n(end + pad)
   const h = n(5 * cell + pad * 2)
   return { svg: `<rect x="0" y="0" width="${w}" height="${h}" rx="3" fill="#1F1E1D" fill-opacity=".72"/>${svg}`, width: w, height: h }
+}
+
+// ---- The little tag in the bottom-right corner naming what he is dressed up for ----
+// A full 3x5 pixel alphabet (M, N and W are wider), so any outfit's name can be spelled out
+const TAG_LETTERS = {
+  A: ['.X.', 'X.X', 'XXX', 'X.X', 'X.X'], B: ['XX.', 'X.X', 'XX.', 'X.X', 'XX.'], C: ['.XX', 'X..', 'X..', 'X..', '.XX'],
+  D: ['XX.', 'X.X', 'X.X', 'X.X', 'XX.'], E: ['XXX', 'X..', 'XX.', 'X..', 'XXX'], F: ['XXX', 'X..', 'XX.', 'X..', 'X..'],
+  G: ['.XX', 'X..', 'X.X', 'X.X', '.XX'], H: ['X.X', 'X.X', 'XXX', 'X.X', 'X.X'], I: ['XXX', '.X.', '.X.', '.X.', 'XXX'],
+  J: ['..X', '..X', '..X', 'X.X', '.X.'], K: ['X.X', 'X.X', 'XX.', 'X.X', 'X.X'], L: ['X..', 'X..', 'X..', 'X..', 'XXX'],
+  M: ['X...X', 'XX.XX', 'X.X.X', 'X...X', 'X...X'], N: ['X..X', 'XX.X', 'X.XX', 'X..X', 'X..X'], O: ['.X.', 'X.X', 'X.X', 'X.X', '.X.'],
+  P: ['XX.', 'X.X', 'XX.', 'X..', 'X..'], Q: ['.X.', 'X.X', 'X.X', 'XX.', '.XX'], R: ['XX.', 'X.X', 'XX.', 'X.X', 'X.X'],
+  S: ['.XX', 'X..', '.X.', '..X', 'XX.'], T: ['XXX', '.X.', '.X.', '.X.', '.X.'], U: ['X.X', 'X.X', 'X.X', 'X.X', 'XXX'],
+  V: ['X.X', 'X.X', 'X.X', 'X.X', '.X.'], W: ['X...X', 'X...X', 'X.X.X', 'XX.XX', 'X...X'], X: ['X.X', 'X.X', '.X.', 'X.X', 'X.X'],
+  Y: ['X.X', 'X.X', '.X.', '.X.', '.X.'], Z: ['XXX', '..X', '.X.', 'X..', 'XXX'],
+  ':': ['.', 'X', '.', 'X', '.'], "'": ['X', 'X', '.', '.', '.'], '.': ['.', '.', '.', '.', 'X'], ',': ['.', '.', '.', 'X', 'X'],
+  '-': ['...', '...', 'XXX', '...', '...'], '&': ['.X.', 'X.X', '.X.', 'X.X', '.XX'], '!': ['X', 'X', 'X', '.', 'X'],
+}
+// The outfit's name as a small dark tag, like the clock tag: "REMEMBRANCE DAY", "HALLOWEEN: ZOMBIE".
+// A note in brackets is left off ("Truth and Reconciliation (Orange Shirt Day)" shows the first part).
+export function outfitTagSvg(name, cell = 1.6) {
+  const text = String(name ?? '').replace(/\s*\(.*?\)/g, '').trim().toUpperCase()
+  if (!text) return null
+  const fill = '#ECE8DE'
+  const pad = 3
+  let cursor = pad
+  let svg = ''
+  for (const ch of text) {
+    if (ch >= '0' && ch <= '9') {
+      svg += digitsSvg(ch, cursor, pad, cell, fill)
+      cursor += 4 * cell
+    } else if (TAG_LETTERS[ch]) {
+      svg += pixels(TAG_LETTERS[ch], cursor, pad, cell, fill)
+      cursor += (TAG_LETTERS[ch][0].length + 1) * cell
+    } else {
+      cursor += 2 * cell
+    }
+  }
+  const width = n(cursor - cell + pad)
+  const height = n(5 * cell + pad * 2)
+  return { svg: `<rect x="0" y="0" width="${width}" height="${height}" rx="3" fill="#1F1E1D" fill-opacity=".72"/>${svg}`, width, height }
 }
 
 // Helper agents at work: little Clawds in hard hats bob along beside him, and one waves goodbye and walks off when it finishes
@@ -4607,6 +4649,12 @@ function layoutBand({ columns, fromCol, toCol, walkSeconds, dir, state, gait, pe
   const tag = hud ? hudSvg(hud) : null
   const leftmostPx = (startUnits + Math.min(0, reach?.[0] ?? 0)) * unit
   const hudPart = tag && leftmostPx > tag.width + 10 ? `<g transform="translate(2 2)">${tag.svg}</g>` : ''
+  // The outfit's name in the bottom-right corner, pinned to that corner as the window changes width. It only shows
+  // when it clears him and anything he holds out (or a board beside him), so it never covers him in a narrow window.
+  const outfitTag = outfit && OUTFITS[outfit] ? outfitTagSvg(outfitLabel(outfit)) : null
+  const farthestUnits = Math.max(startUnits, walkSeconds > 0 ? px(toCol) : startUnits) + Math.max(reach?.[1] ?? 0, TAG_CLEARANCE_UNITS)
+  const tagX = outfitTag ? n(width - outfitTag.width - 2) : 0
+  const outfitPart = outfitTag && tagX > farthestUnits * unit + 6 ? `<g transform="translate(${tagX} ${n(figureHeight - outfitTag.height - 1)})">${outfitTag.svg}</g>` : ''
   const sceneArea = {
     width,
     height,
@@ -4630,6 +4678,8 @@ function layoutBand({ columns, fromCol, toCol, walkSeconds, dir, state, gait, pe
     sceneSvg(scene?.filter((id) => FRONT_SCENES.has(id)), sceneArea) +
     // The time, day and weather tag in the top-left corner
     hudPart +
+    // What he is dressed up for, in the bottom-right corner
+    outfitPart +
     (row ? `<g transform="translate(0 ${rowY})">${isSliding ? `<g>${row}${anim('translate', pushSeconds, [[0, `${n(rowShift)} 0`], [pushSeconds, '0 0', 'p2out']], { once: true })}</g>` : isFading ? `<g>${row}${anim('opacity', FADE_SECONDS, [[0, '0'], [FADE_SECONDS, '1', 'lin']], { once: true })}</g>` : row}</g>` : '') +
     '</svg>'
   const slide = isPushed || isSliding ? { origin0: isPushed ? slideFrom.origin : startUnits, origin1: startUnits, rowShift0: isSliding ? rowShift : 0, seconds: pushSeconds } : null

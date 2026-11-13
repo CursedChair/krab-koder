@@ -533,3 +533,15 @@ test('mogging: the clothes and any mask come off so his whole mogging face shows
     assert.ok(!figureFor('mog', 'idle', { outfit: masked }).includes(OUTFITS[masked].head), `${masked}: the mask is off`)
   }
 })
+
+test('a small tag in the bottom-right corner names what he is dressed up for, and hides when it would crowd him', async () => {
+  const { outfitLabel } = await import('../hooks/outfits.mjs')
+  assert.equal(outfitLabel('zombie'), 'Halloween: Zombie')
+  assert.equal(outfitLabel('remembrance'), 'Remembrance Day')
+  assert.match(outfitLabel('halloween'), /^Halloween: /)
+  const band = (outfit, columns) => bandSvg({ columns, fromCol: 4, state: 'calm', gait: 'idle', inline: true, chips: [{ kind: 'meter', label: 'context', percent: 24, text: '24%', color: '#5E8C6A' }], scene: [], outfit })
+  const tagged = (svg) => svg.includes('rx="3" fill="#1F1E1D"') && svg.split('rx="3" fill="#1F1E1D"').length > 1
+  assert.ok(tagged(band('remembrance', 110)), 'a wide window shows the tag')
+  assert.ok(!tagged(band('remembrance', 30)), 'a narrow one hides it')
+  assert.ok(!tagged(band(null, 110)), 'no outfit, no tag')
+})

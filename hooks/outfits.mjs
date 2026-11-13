@@ -1377,3 +1377,11 @@ export const OUTFITS = {
 }
 
 export const OUTFIT_IDS = Object.keys(OUTFITS)
+
+// The name for the little tag in his corner: a Halloween costume says it is Halloween ("Halloween: Zombie"), whether
+// it comes from the date or was picked by hand; anything else is the outfit's own name
+export function outfitLabel(id) {
+  if (id === 'halloween') return `Halloween: ${costumeToday().name}`
+  if (HALLOWEEN_COSTUMES[id]) return `Halloween: ${HALLOWEEN_COSTUMES[id].name}`
+  return OUTFITS[id]?.name ?? null
+}
